@@ -1,11 +1,19 @@
-"""
-Authors: Wouter Van Gansbeke, Simon Vandenhende
-Licensed under the CC BY-NC 4.0 license (https://creativecommons.org/licenses/by-nc/4.0/)
-"""
+
 import os
 import yaml
 from easydict import EasyDict
-from utils.utils import mkdir_if_missing
+#import numpy as np
+import errno
+
+
+def mkdir_if_missing(directory):
+    if not os.path.exists(directory):
+        try:
+            os.makedirs(directory)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
 
 def create_config(root_dir, config_file_exp, prefix):
     # Config for environment path
@@ -20,14 +28,20 @@ def create_config(root_dir, config_file_exp, prefix):
         cfg[k] = v
 
     # Set paths for pretext task (These directories are needed in every stage)
-    nfix =  cfg['neighbor_prefix']
-    nfix_v = cfg['neighbor_prefix_val']
+    #nfix =  cfg['neighbor_prefix']
+    #nfix_v = cfg['neighbor_prefix_val']
     base_dir = os.path.join(root_dir, cfg['train_db_name'])
-    pretext_dir = os.path.join(base_dir, 'pretext')
+    pretext_dir = os.path.join(base_dir, prefix)
     mkdir_if_missing(base_dir)
     mkdir_if_missing(pretext_dir)
-    cfg['pretext_dir'] = pretext_dir
-    cfg['pretext_checkpoint'] = os.path.join(pretext_dir,prefix+'_checkpoint.pth.tar')
+    cfg['result_save_path'] = os.path.join(pretext_dir,prefix+'_model.pth')
+
+    #cfg['pretext_dir'] = pretext_dir
+    cfg['checkpoint_path'] = os.path.join(pretext_dir,prefix+'_checkpoint.pth.tar')
+
+    return cfg
+
+"""
     cfg['pretext_model'] = os.path.join(pretext_dir,prefix+'_model.pth.tar')
     #os.path.join('topk',prefix+'_topk-train-neighbors.npy')
     cfg['topk_neighbors_train_path'] = os.path.join(base_dir, 'topk/'+nfix+'_topk-train-neighbors.npy')
@@ -49,5 +63,6 @@ def create_config(root_dir, config_file_exp, prefix):
     cfg['selflabel_dir'] = selflabel_dir
     cfg['selflabel_checkpoint'] = os.path.join(selflabel_dir,prefix+'_checkpoint.pth.tar')
     cfg['selflabel_model'] = os.path.join(selflabel_dir,prefix+'_model.pth.tar')
+"""
 
-    return cfg
+
