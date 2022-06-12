@@ -11,6 +11,7 @@ from lightly.models.modules import SimSiamProjectionHead
 from lightly.models.modules import SimSiamPredictionHead
 from lightly.models.modules import SwaVProjectionHead
 from lightly.models.modules import SwaVPrototypes
+from lightly.models.modules import SimCLRProjectionHead
 import copy
 
 class barlowtwins_model(nn.Module):
@@ -109,6 +110,21 @@ class swav_model(nn.Module):
         x = nn.functional.normalize(x, dim=1, p=2)
         p = self.prototypes(x)
         return p
+        
+    def bf(self,x):
+        return self.backbone(x).flatten(start_dim=1)
+
+
+class simclr_model(nn.Module):
+    def __init__(self, backbone, backbone_dim, hidden_dim, out_dim):
+        super().__init__()
+        self.backbone = backbone
+        self.projection_head = SimCLRProjectionHead(backbone_dim, hidden_dim, out_dim)
+
+    def forward(self, x):
+        x = self.backbone(x).flatten(start_dim=1)
+        z = self.projection_head(x)
+        return z
         
     def bf(self,x):
         return self.backbone(x).flatten(start_dim=1) 
