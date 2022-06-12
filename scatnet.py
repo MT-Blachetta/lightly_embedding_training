@@ -244,7 +244,7 @@ class scatnet_backbone(nn.Module):
             ValueError: if `res_blocks` is not supported
         """
 
-        super(ScatSimCLR, self).__init__()
+        super(scatnet_backbone, self).__init__()
 
         if J < 1:
             raise ValueError('Incorrect `J` parameter')
