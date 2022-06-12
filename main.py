@@ -20,17 +20,35 @@ with open(args.list,'r') as lf:
     session_list = eval(pstr.strip(' \n'))
 
 for prefix in session_list:
-    print('prefix: ',prefix)
+    print('§1_prefix: ',prefix) #@
+    ok = input('OK ? ') #@
     p = create_config(args.root_dir, "config_files/"+prefix+'.yml', prefix)
+    print(p) #@
+    ok = input('OK ? ') #@
     transform = get_transform(p)
+    print('§3_transform: ',str(transform)) #@
+    ok = input('OK ? ') #@
     dataset = get_dataset(p,transform)
+    print("§4_dataset_type: ",type(dataset)) #@
+    ok = input('OK ? ') #@
     train_loader = get_dataloader(p,dataset)
+    print('§5_train_loader',str(train_loader)) #@
+    ok = input('OK ? ') #@
     backbone = get_backbone(p)
+    print('§6_backbone: ',str(backbone)) #@
+    ok = input('OK ? ') #@
     model = get_model(p,backbone['backbone'],backbone['out_dim'])
+    print('§7_model ',str(model)) #@
+    ok = input('OK ? ') #@
     loss_function = get_criterion(p)
-    optimizer = get_optimizer(p)
+    print('§8_criterion: ',str(loss_function)) #@
+    ok = input('OK ? ') #@
+    optimizer = get_optimizer(p,model)
+    print('§9_optimizer: ',str(optimizer)) #@
+    ok = input('OK ? ') #@
     trainer = get_trainer(p,loss_function)
-
+    print('§10_optimizer: ',str(trainer)) #@
+    ok = input('OK ? ') #@
     end_epoch = p['epochs']
     start_epoch = 0
 
