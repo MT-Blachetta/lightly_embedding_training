@@ -68,7 +68,7 @@ def get_model(p,backbone,backbone_dim):
 def get_transform(p):
 
     augmentation_method = p['augmentation_strategy']
-    aug_args = p['augmentation_kwargs']
+    #aug_args = p['augmentation_kwargs']
     # get_train_transformations(p):
     if augmentation_method == 'standard':
             # Standard augmentation strategy
@@ -87,19 +87,19 @@ def get_transform(p):
 
     elif augmentation_method == 'random':
         from transform import RandAugmentation
-        train_transformation = RandAugmentation(aug_args)
+        train_transformation = RandAugmentation(p)
 
     elif augmentation_method == 'moco':
         from transform import MocoAugmentations
-        train_transformation = MocoAugmentations(aug_args)
+        train_transformation = MocoAugmentations(p)
     
     elif augmentation_method == 'barlow':
         from transform import BarlowtwinsAugmentations
-        train_transformation = BarlowtwinsAugmentations(aug_args)
+        train_transformation = BarlowtwinsAugmentations(p)
 
     elif augmentation_method == 'multicrop':
         from transform import MultiCropAugmentation
-        train_transformation = MultiCropAugmentation(aug_args)
+        train_transformation = MultiCropAugmentation(p)
         
     else:
         raise ValueError('Invalid augmentation strategy {}'.format(p['augmentation_strategy']))

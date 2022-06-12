@@ -201,15 +201,15 @@ class RandAugmentation(object):
         return crops
 
 class MocoAugmentations(object):
-    def __init__(self, args):
+    def __init__(self, p):
         self.aug = transforms.Compose([
-            transforms.RandomResizedCrop(args['img_size'], scale=(0.2, 1.), interpolation=Image.BICUBIC),
-            transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
-            transforms.RandomGrayscale(p=0.2),
-            transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
+            transforms.RandomResizedCrop(**p['augmentation_kwargs']['random_resized_crop'], interpolation=Image.BICUBIC),
+            transforms.RandomApply([transforms.ColorJitter(**p['augmentation_kwargs']['color_jitter'])], p=0.8),
+            transforms.RandomGrayscale(**p['augmentation_kwargs']['random_grayscale']),
+            transforms.RandomApply([GaussianBlur(p['augmentation_kwargs']['gaussian_blur'])], p=0.5),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),]) 
+            transforms.Normalize(**p['augmentation_kwargs']['normalize']),]) 
 
     def __call__(self, image):
         crops = []
@@ -218,22 +218,22 @@ class MocoAugmentations(object):
         return crops
 
 class BarlowtwinsAugmentations(object):
-    def __init__(self, args):
+    def __init__(self, p):
         self.aug1 = transforms.Compose([
-            transforms.RandomResizedCrop(args['img_size'], interpolation=Image.BICUBIC),
-            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomResizedCrop(**p['augmentation_kwargs']['random_resized_crop'], interpolation=Image.BICUBIC),
+            transforms.RandomHorizontalFlip(p=['augmentation_kwargs']['random_horizontal_flip']),
             transforms.RandomApply(
-                [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)],
+                [transforms.ColorJitter(**p['augmentation_kwargs']['color_jitter'])],
                 p=0.8
             ),
-            transforms.RandomGrayscale(p=0.2),
-            transforms.RandomApply([GaussianBlur([.1, 2.])], p=1.0),
+            transforms.RandomGrayscale(**p['augmentation_kwargs']['random_grayscale']),
+            transforms.RandomApply([GaussianBlur(p['augmentation_kwargs']['gaussian_blur'])], p=1.0),
             Solarization(p=0.0),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.Normalize(**p['augmentation_kwargs']['normalize'])
         ])
         self.aug2 = transforms.Compose([
-            transforms.RandomResizedCrop(args['img_size'], interpolation=Image.BICUBIC),
+            transforms.RandomResizedCrop(**p['augmentation_kwargs']['random_resized_crop'], interpolation=Image.BICUBIC),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomApply(
                 [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)],
@@ -241,9 +241,9 @@ class BarlowtwinsAugmentations(object):
             ),
             transforms.RandomGrayscale(p=0.2),
             transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.1),
-            Solarization(p=0.2),
+            Solarization(p=p['augmentation_kwargs']['Solarization']),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.Normalize(**p['augmentation_kwargs']['normalize'])
         ])
 
     def __call__(self, image):
@@ -253,45 +253,45 @@ class BarlowtwinsAugmentations(object):
         return crops
 
 class MultiCropAugmentation(object):
-    def __init__(self, args):
-        global_crops_scale = args['global_crops_scale']
-        local_crops_scale  = args['local_crops_scale']
-        local_crops_number = args['local_crops_number']
+    def __init__(self, p):
+        #global_crops_scale = p['augmentation_kwargs']['global_crops_scale']
+        local_crops_scale  = p['augmentation_kwargs']['local_crops_scale']
+        local_crops_number = p['augmentation_kwargs']['local_crops_number']
 
         flip_and_color_jitter = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomApply(
-                [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)],
+                [transforms.ColorJitter(**p['augmentation_kwargs']['color_jitter'])],
                 p=0.8
             ),
-            transforms.RandomGrayscale(p=0.2),
+            transforms.RandomGrayscale(**p['augmentation_kwargs']['random_grayscale']),
         ])
         normalize = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+            transforms.Normalize(**p['augmentation_kwargs']['normalize']),
         ])
 
         # first global crop
         self.global_transfo1 = transforms.Compose([
-            transforms.RandomResizedCrop(96, scale=global_crops_scale, interpolation=Image.BICUBIC),
+            transforms.RandomResizedCrop(**p['augmentation_kwargs']['random_resized_crop'], interpolation=Image.BICUBIC),
             flip_and_color_jitter,
             #utils.GaussianBlur(1.0),
-            transforms.RandomApply([GaussianBlur([.1, 2.])], p=1.0),
+            transforms.RandomApply([GaussianBlur(p['augmentation_kwargs']['gaussian_blur'])], p=1.0),
             normalize,
         ])
         # second global crop
         self.global_transfo2 = transforms.Compose([
-            transforms.RandomResizedCrop(args['img_size'], scale=global_crops_scale, interpolation=Image.BICUBIC),
+            transforms.RandomResizedCrop(**p['augmentation_kwargs']['random_resized_crop'], interpolation=Image.BICUBIC),
             flip_and_color_jitter,
             #utils.GaussianBlur(0.1),
-            transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.1),
-            Solarization(0.2),
+            transforms.RandomApply([GaussianBlur(p['augmentation_kwargs']['gaussian_blur'])], p=0.1),
+            Solarization(p['augmentation_kwargs']['Solarization']),
             normalize,
         ])
         # transformation for the local small crops
         self.local_crops_number = local_crops_number
         self.local_transfo = transforms.Compose([
-            transforms.RandomResizedCrop(args['local_crops_size'], scale=local_crops_scale, interpolation=Image.BICUBIC),
+            transforms.RandomResizedCrop(p['augmentation_kwargs']['local_crops_size'], scale=local_crops_scale, interpolation=Image.BICUBIC),
             flip_and_color_jitter,
             #utils.GaussianBlur(p=0.5),
             transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),

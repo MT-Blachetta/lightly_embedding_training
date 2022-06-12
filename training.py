@@ -90,7 +90,7 @@ class Trainer_clPcl(object):
                 #alpha = 0.1
                 divzero = 0.1
                 ov = original_view.cpu().detach().numpy()
-                print(ov.shape)
+                #print(ov.shape)
                 av = augmented_view.cpu().detach().numpy()
                 k = self.num_clusters
 
@@ -168,6 +168,7 @@ class Trainer_clPcl(object):
             
             loss = instance_loss + group_loss
             
+            print('loss: ',str(loss))
             if loss < self.best_loss:
                 self.best_loss = loss
                 self.best_model = copy.deepcopy(model)
