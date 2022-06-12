@@ -51,7 +51,7 @@ class Trainer_clPcl(object):
         self.num_clusters = p['num_classes']
         self.alpha = p['loss_alpha']
         self.lamb = p['loss_lambda']
-        self.criterion = criterion
+        self.criterion = criterion.cuda()
         self.best_loss = 10000
         self.best_model = None
 
@@ -62,7 +62,7 @@ class Trainer_clPcl(object):
         alpha = self.alpha
         iloss = torch.nn.CrossEntropyLoss()
         iloss = iloss.cuda()
-            
+        model = model.cuda()
         model.train()
         
 
