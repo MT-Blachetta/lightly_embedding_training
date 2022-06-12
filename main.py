@@ -20,13 +20,13 @@ with open(args.list,'r') as lf:
     session_list = eval(pstr.strip(' \n'))
 
 for prefix in session_list:
-
+    print('prefix: ',prefix)
     p = create_config(args.root_dir, "config_files/"+prefix+'.yml', prefix)
     transform = get_transform(p)
     dataset = get_dataset(p,transform)
     train_loader = get_dataloader(p,dataset)
     backbone = get_backbone(p)
-    model = get_model(backbone['backbone'],backbone['out_dim'])
+    model = get_model(p,backbone['backbone'],backbone['out_dim'])
     loss_function = get_criterion(p)
     optimizer = get_optimizer(p)
     trainer = get_trainer(p,loss_function)
