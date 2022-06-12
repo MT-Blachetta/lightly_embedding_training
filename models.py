@@ -126,7 +126,7 @@ class clpcl_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encode
         m: moco momentum of updating key encoder (default: 0.999)
         T: softmax temperature (default: 0.07)
         """
-        super(MoCo, self).__init__()
+        super(clpcl_model, self).__init__()
 
         self.K = K
         self.m = m
