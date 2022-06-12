@@ -19,7 +19,7 @@ def get_backbone(p):
 
     if p['backbone'] == 'scatnet':
         from scatnet import scatnet_backbone
-        backbone = scatnet_backbone(J=p['model_args']['J'], L=p['model_args']['L'], input_size=p['model_args']['input_size'], res_blocks=p['model_args']['res_blocks'])
+        backbone = scatnet_backbone(J=p['model_kwargs']['J'], L=p['model_kwargs']['L'], input_size=p['model_kwargs']['input_size'], res_blocks=p['model_kwargs']['res_blocks'])
         out_dim = backbone.out_dim
 
     elif p['backbone'] == 'resnet18':
@@ -35,11 +35,11 @@ def get_model(p,backbone,backbone_dim):
     
     if p['base_model'] == 'scatnet':
         from scatnet import ScatSimCLR
-        return ScatSimCLR(J=p['model_args']['J'], L=p['model_args']['L'], input_size=p['model_args']['input_size'], res_blocks=p['model_args']['res_blocks'], out_dim=p['model_args']['out_dim'])
+        return ScatSimCLR(J=p['model_kwargs']['J'], L=p['model_kwargs']['L'], input_size=p['model_kwargs']['input_size'], res_blocks=p['model_kwargs']['res_blocks'], out_dim=p['model_kwargs']['out_dim'])
     
     elif p['base_model'] == 'barlow':
         from models import barlowtwins_model
-        return barlowtwins_model(backbone, backbone_dim, p['model_args']['hidden_dim'], p['model_args']['out_dim'])
+        return barlowtwins_model(backbone, backbone_dim, p['model_kwargs']['hidden_dim'], p['model_kwargs']['out_dim'])
 
     elif p['base_model'] == 'simclr':
         from models import simclr_model
@@ -47,23 +47,23 @@ def get_model(p,backbone,backbone_dim):
 
     elif p['base_model'] == 'byol':
         from models import byol_model
-        return byol_model(backbone, backbone_dim, p['model_args']['hidden_dim'], p['model_args']['out_dim'])
+        return byol_model(backbone, backbone_dim, p['model_kwargs']['hidden_dim'], p['model_kwargs']['out_dim'])
 
     elif p['base_model'] == 'nnclr':
         from models import nnclr_model
-        return nnclr_model(backbone, backbone_dim, p['model_args']['hidden_dim'], p['model_args']['out_dim'])
+        return nnclr_model(backbone, backbone_dim, p['model_kwargs']['hidden_dim'], p['model_kwargs']['out_dim'])
 
     elif p['base_model'] == 'simsiam':
         from models import simsiam_model
-        return simsiam_model(backbone, backbone_dim, p['model_args']['hidden_dim'], p['model_args']['out_dim'])
+        return simsiam_model(backbone, backbone_dim, p['model_kwargs']['hidden_dim'], p['model_kwargs']['out_dim'])
 
     elif p['base_model'] == 'swav':
         from models import swav_model
-        return swav_model(backbone, backbone_dim, p['model_args']['hidden_dim'], p['model_args']['out_dim'])
+        return swav_model(backbone, backbone_dim, p['model_kwargs']['hidden_dim'], p['model_kwargs']['out_dim'])
 
     elif p['base_model'] == 'clpcl':
         from models import clpcl_model
-        return clpcl_model(backbone, backbone_dim, p['model_args']['out_dim'])
+        return clpcl_model(backbone, backbone_dim, p['model_kwargs']['out_dim'])
 
 def get_transform(p):
 
