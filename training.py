@@ -240,8 +240,8 @@ class Trainer_proto(object):
 
                 labels_, cluster_centers = cluster_module.cluster_batch(original_view)
                 labels_I, cluster_centers_I = cluster_module.cluster_batch(augmented_view,augmented=True)
-                cluster_centers = torch.Tensor(cluster_centers).cuda()
-                cluster_centers_I = torch.Tensor(cluster_centers_I).cuda()
+                cluster_centers = torch.stack(cluster_centers,dim=0).cuda()
+                cluster_centers_I = torch.stack(cluster_centers_I,dim=0).cuda()
 
                 mask_per_label = cluster_module.cluster_mask()
                 prototype_list = []
