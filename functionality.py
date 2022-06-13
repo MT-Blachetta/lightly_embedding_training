@@ -8,6 +8,7 @@ import collections
 from torch._six import string_classes
 int_classes = int
 
+
 class wrapped_resnet(nn.Module):
     def __init__(self, backbone):
         super().__init__()
@@ -219,6 +220,24 @@ def get_criterion(p):
     if p['criterion'] == 'clpcl':
         from loss import PclCldLoss_2
         return PclCldLoss_2()
+    elif p['criterion'] == 'simclr':
+        from lightly.loss import NTXentLoss
+        return NTXentLoss()
+    elif p['criterion'] == 'nnclr':
+        from lightly.loss import NTXentLoss
+        return NTXentLoss()
+    elif p['criterion'] == 'barlowtwins':
+        from lightly.loss import BarlowTwinsLoss
+        return BarlowTwinsLoss()
+    elif p['criterion'] == 'simsiam':
+        from lightly.loss import NegativeCosineSimilarity
+        return NegativeCosineSimilarity()
+    elif p['criterion'] == 'byol':
+        from lightly.loss import NegativeCosineSimilarity
+        return NegativeCosineSimilarity()
+    elif p['criterion'] == 'svaw':
+        from lightly.loss import SwaVLoss
+        return SwaVLoss()
     else: 
         raise ValueError('not ready yet')
 
@@ -231,6 +250,26 @@ def get_trainer(p,criterion):
     if p['train_method'] == 'proto':
         from training import Trainer_proto
         return Trainer_proto(p,criterion)
+
+    elif p['train_method'] == 'simclr':
+        from training import Trainer_simclr
+        return Trainer_simclr(p,criterion)
+
+    elif p['train_method'] == 'nnclr':
+        from training import Trainer_nnclr
+        return Trainer_nnclr(p,criterion)
+
+    elif p['train_method'] == 'simsiam':
+        from training import Trainer_simsiam
+        return Trainer_simsiam(p,criterion)
+
+    elif p['train_method'] == 'barlowtwins':
+        from training import Trainer_barlowtwins
+        return Trainer_barlowtwins(p,criterion)
+    
+    elif p['train_method'] == 'byol':
+        from training import Trainer_byol
+        return Trainer_byol(p,criterion)
 
     else: raise ValueError('trainer not implemented')
 

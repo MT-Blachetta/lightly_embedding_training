@@ -4,6 +4,8 @@ import numpy as np
 import nltk
 from nltk.cluster.kmeans import KMeansClusterer
 from loss import SimCLRLoss
+from lightly.models.utils import update_momentum
+from lightly.models.modules import NNMemoryBankModule
 
 class AverageMeter(object):
     def __init__(self, name, fmt=':f'):
@@ -45,6 +47,164 @@ class ProgressMeter(object):
         return '[' + fmt + '/' + fmt.format(num_batches) + ']'
 
 
+class Trainer_nnclr(object):
+
+    def __init__(self,p,criterion):
+        self.criterion = criterion
+        self.memory_bank = NNMemoryBankModule(size=8192).cuda()
+
+    def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        for batch in train_loader:
+            originImage_batch = batch['image']
+            augmentedImage_batch_list = batch['image_augmented']
+
+            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            z0, p0 = model(originImage_batch)
+
+            loss = 0
+            
+            for augmentedImage_batch in augmentedImage_batch_list:
+                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                z1, p1 = model(augmentedImage_batch)
+
+                z0 = self.memory_bank(z0, update=False)
+                z1 = self.memory_bank(z1, update=True)
+
+                loss += 0.5 * (self.criterion(z0, p1) + self.criterion(z1, p0))
+
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+#------------------------------------------------------------------
+
+class Trainer_barlowtwins(object):
+
+    def __init__(self,p,criterion):
+        self.criterion = criterion
+
+    def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        for batch in train_loader:
+            originImage_batch = batch['image']
+            augmentedImage_batch_list = batch['image_augmented']
+
+            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            z0 = model(originImage_batch)
+
+            loss = 0
+            
+            for augmentedImage_batch in augmentedImage_batch_list:
+                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                z1 = model(augmentedImage_batch)
+                loss += self.criterion(z0, z1)
+
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+
+
+class Trainer_simsiam(object):
+
+    def __init__(self,p,criterion):
+        self.criterion = criterion
+        
+
+    def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        for batch in train_loader:
+            originImage_batch = batch['image']
+            augmentedImage_batch_list = batch['image_augmented']
+
+            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            z0, p0 = model(originImage_batch)
+
+            loss = 0
+            
+            for augmentedImage_batch in augmentedImage_batch_list:
+                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                z1, p1 = model(augmentedImage_batch)
+
+                loss += 0.5 * (self.criterion(z0, p1) + self.criterion(z1, p0))
+
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+
+
+
+#----------------------------------------------------------------
+
+
+class Trainer_simclr(object):
+
+    def __init__(self,p,criterion):
+        self.criterion = criterion
+
+    def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        for batch in train_loader:
+            originImage_batch = batch['image']
+            augmentedImage_batch_list = batch['image_augmented']
+
+            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            z0 = model(originImage_batch)
+
+            loss = 0
+            
+            for augmentedImage_batch in augmentedImage_batch_list:
+                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                z1 = model(augmentedImage_batch)
+                loss += self.criterion(z0, z1)
+
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+
+class Trainer_byol(object):
+
+    def __init__(self,p,criterion):
+        self.criterion = criterion
+
+    def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        for batch in train_loader:
+            update_momentum(model.backbone, model.backbone_momentum, m=0.99)
+            update_momentum(model.projection_head, model.projection_head_momentum, m=0.99)
+            originImage_batch = batch['image']
+            augmentedImage_batch_list = batch['image_augmented']
+
+            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            p0 = model(originImage_batch)
+            z0 = model.forward_momentum(originImage_batch)
+
+            loss = 0
+            
+            for augmentedImage_batch in augmentedImage_batch_list:
+                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                p1 = model(augmentedImage_batch)
+                z1 = model.forward_momentum(augmentedImage_batch)
+                loss += 0.5 * (self.criterion(p0, z1) + self.criterion(p1, z0))
+
+
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+
+
+
+
+#----------------------------------------------------------------
 
 class Trainer_clPcl(object):
 

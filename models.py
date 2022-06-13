@@ -4,7 +4,6 @@ from torch import nn
 from lightly.models.modules import BarlowTwinsProjectionHead
 from lightly.models.modules import BYOLProjectionHead
 from lightly.models.utils import deactivate_requires_grad
-from lightly.models.utils import update_momentum
 from lightly.models.modules import NNCLRProjectionHead
 from lightly.models.modules import NNCLRPredictionHead
 from lightly.models.modules import SimSiamProjectionHead
