@@ -96,8 +96,9 @@ class Trainer_clPcl(object):
                 k = self.num_clusters
 
                 if cluster_module:
-                    labels_, cluster_centers = cluster_module.cluster_batch(indices_batch)
-                    labels_I, cluster_centers_I = cluster_module.cluster_batch_I(indices_batch)
+                    cluster_module.batch_cluster_ids(indices_batch)
+                    labels_, cluster_centers = cluster_module.cluster_batch(original_view)
+                    labels_I, cluster_centers_I = cluster_module.cluster_batch(augmented_view,augmented=True)
                 else:      
                     clusterer = KMeansClusterer(k, distance=nltk.cluster.util.cosine_distance, repeats=20, normalise=True, avoid_empty_clusters=True)
                     clusterer_I = KMeansClusterer(k, distance=nltk.cluster.util.cosine_distance, repeats=20, normalise=True, avoid_empty_clusters=True)
@@ -194,9 +195,200 @@ class Trainer_proto(object):
         self.best_loss = 10000
         self.best_model = None
         self.nxt_criterion = SimCLRLoss(p['temperature'])
+        self.version = 1
+        self.phase = 0
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch, cluster_module):
         
+        if self.phase == 0:
+            self.train_phase_A(train_loader, model, optimizer, epoch, cluster_module)
+            self.configure_phase(self,epoch)
+
+        elif self.phase == 1:
+            self.train_phase_B(train_loader, model, optimizer, epoch, cluster_module)
+            self.configure_phase(epoch)
+
+        elif self.phase == 2:
+            self.train_phase_C(train_loader, model, optimizer, epoch, cluster_module)            
+            self.configure_phase(epoch)
+
+        else: raise ValueError('invalid phase value')
+
+    def configure_phase(self,epoch):
+        
+        if self.version == 1:
+            if epoch > 50: self.phase = 2
+            elif epoch > 20: self.phase = 1
+        return      
+
+    def train_phase_A(self, train_loader, model, optimizer, epoch, cluster_module=None):
+
+        losses = AverageMeter('Loss', ':.4e')
+        progress = ProgressMeter(len(train_loader),[losses],prefix="Epoch: [{}]".format(epoch))
+        #alpha = self.alpha
+        iloss = torch.nn.CrossEntropyLoss()
+        iloss = iloss.cuda()
+        model = model.cuda()
+        model.train()
+        
+
+        for i, batch in enumerate(train_loader):
+            originImage_batch = batch['image']
+            augmentedImage_batch_list = batch['image_augmented']
+            #indices_batch = batch['index']
+            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            #group_loss = 0
+            instance_loss = 0
+            
+            for augmentedImage_batch in augmentedImage_batch_list:
+                
+                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+
+                logits, labels = model(originImage_batch,augmentedImage_batch)
+                instance_loss += iloss(logits,labels)
+
+            losses.update(instance_loss.item())
+
+            optimizer.zero_grad()
+            instance_loss.backward()
+            optimizer.step()
+
+            if i % 25 == 0:
+                progress.display(i)
+        
+
+    def train_phase_B(self, train_loader, model, optimizer, epoch, cluster_module=None):
+        
+        losses = AverageMeter('Loss', ':.4e')
+        progress = ProgressMeter(len(train_loader),[losses],prefix="Epoch: [{}]".format(epoch))
+        alpha = self.alpha
+        iloss = torch.nn.CrossEntropyLoss()
+        iloss = iloss.cuda()
+        model = model.cuda()
+        model.train()
+        
+
+        for i, batch in enumerate(train_loader):
+            originImage_batch = batch['image']
+            augmentedImage_batch_list = batch['image_augmented']
+            indices_batch = batch['index']
+            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            group_loss = 0
+            instance_loss = 0
+            
+            for augmentedImage_batch in augmentedImage_batch_list:
+                
+                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+
+                logits, labels = model(originImage_batch,augmentedImage_batch)
+                instance_loss += iloss(logits,labels)
+
+
+                original_view = model.group(originImage_batch) # € [batch_size ,feature_dim]
+                augmented_view = model.group(augmentedImage_batch) # € [batch_size ,feature_dim]
+                feature_dim = len(original_view[0])
+                batch_size = len(original_view)
+
+                #alpha = 0.1
+                divzero = 0.1
+                ov = original_view.cpu().detach().numpy()
+                #print(ov.shape)
+                av = augmented_view.cpu().detach().numpy()
+                k = self.num_clusters
+
+                if cluster_module:
+                    cluster_module.batch_cluster_ids(indices_batch)
+                    labels_, cluster_centers = cluster_module.cluster_batch(original_view)
+                    labels_I, cluster_centers_I = cluster_module.cluster_batch(augmented_view,augmented=True)
+                else:      
+                    clusterer = KMeansClusterer(k, distance=nltk.cluster.util.cosine_distance, repeats=20, normalise=True, avoid_empty_clusters=True)
+                    clusterer_I = KMeansClusterer(k, distance=nltk.cluster.util.cosine_distance, repeats=20, normalise=True, avoid_empty_clusters=True)
+                    labels_ = clusterer.cluster(ov,True)
+                    labels_I = clusterer_I.cluster(av,True)
+                    cluster_centers = torch.Tensor( np.array(clusterer.means()) ) 
+                    cluster_centers_I = torch.Tensor( np.array(clusterer_I.means()) )
+
+
+                #cluster_centers
+                #MI_kmeans_results.append( cluster_centers_I )
+                    # c -> k
+                center = [ cluster_centers[i] for i in range(k) ]
+                center_I = [ cluster_centers_I[i] for i in range(k) ]
+                cdat = [ x.unsqueeze(0).expand(batch_size,feature_dim) for x in center]
+                cmatrix = torch.cat(cdat,1)
+                cdat_I = [ x.unsqueeze(0).expand(batch_size,feature_dim) for x in center_I]
+                cmatrix_I = torch.cat(cdat_I,1)
+
+                original_cpu = original_view.cpu()
+                augmented_cpu = augmented_view.cpu()          
+                fmatrix = torch.Tensor(copy.deepcopy(ov))
+                fmatrix_I = torch.Tensor(copy.deepcopy(av))
+
+                for _ in range(1,k): fmatrix = torch.cat((fmatrix,original_cpu),1)
+                for _ in range(1,k): fmatrix_I = torch.cat((fmatrix_I,augmented_cpu),1)
+                        
+                cmatrix = cmatrix.cuda()
+                fmatrix = fmatrix.cuda()
+                cmatrix_I = cmatrix_I.cuda()
+                fmatrix_I = fmatrix_I.cuda()
+                    
+                zmatrix = fmatrix-cmatrix
+                zmatrix = zmatrix*zmatrix
+                result = zmatrix.flatten(0).view(batch_size,k,feature_dim)
+                result = torch.sum(result,2)
+                result = torch.sqrt(result)
+
+                zmatrix_I = fmatrix_I-cmatrix_I
+                zmatrix_I = zmatrix_I*zmatrix_I
+                result_I = zmatrix_I.flatten(0).view(batch_size,k,feature_dim)
+                result_I = torch.sum(result_I,2)
+                result_I = torch.sqrt(result_I)
+                    
+                assign = torch.zeros(batch_size,k)
+                assign_I = torch.zeros(batch_size,k)
+
+                for i in range(batch_size):
+                    assign[i][ int(labels_[i]) ] = 1
+                    assign_I[i][ int(labels_I[i]) ] = 1
+                        
+                assign = assign.cuda()
+                assign_I = assign_I.cuda()
+                    
+                avgDistance = torch.sum(assign*result,0)
+                Z = torch.sum(assign,0) + 1
+                Zlog = torch.log(Z+alpha)
+                divisor = Z*Zlog
+                concentrations = (avgDistance/divisor) + divzero
+                concentrations = concentrations.cpu()
+                avgDistance_I = torch.sum(assign_I*result_I,0)
+                Z_I = torch.sum(assign_I,0) + 1
+                Zlog_I = torch.log(Z_I+alpha)
+                divisor_I = Z_I*Zlog_I
+                concentrations_I = (avgDistance_I/divisor_I) + divzero
+                concentrations_I = concentrations_I.cpu()
+                    
+                group_loss += self.criterion( features = original_view, features_I = augmented_view, M_kmeans = cluster_centers , M_kmeans_I = cluster_centers_I, concentrations = concentrations, concentrations_I = concentrations_I, labels = labels, labels_I = labels_I, lb = self.lamb)
+            
+            loss = instance_loss + group_loss
+            
+            print('loss: ',str(loss))
+            if loss < self.best_loss:
+                self.best_loss = loss
+                self.best_model = copy.deepcopy(model)
+            
+            losses.update(loss.item())
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if i % 25 == 0:
+                progress.display(i)
+
+
+
+    def train_phase_C(self, train_loader, model, optimizer, epoch, cluster_module):
+
         losses = AverageMeter('Loss', ':.4e')
         progress = ProgressMeter(len(train_loader),[losses],prefix="Epoch: [{}]".format(epoch))
         alpha = self.alpha
@@ -240,8 +432,8 @@ class Trainer_proto(object):
 
                 labels_, cluster_centers = cluster_module.cluster_batch(original_view)
                 labels_I, cluster_centers_I = cluster_module.cluster_batch(augmented_view,augmented=True)
-                cluster_centers = torch.stack(cluster_centers,dim=0).cuda()
-                cluster_centers_I = torch.stack(cluster_centers_I,dim=0).cuda()
+                #cluster_centers = torch.stack(cluster_centers,dim=0).cuda()
+                #cluster_centers_I = torch.stack(cluster_centers_I,dim=0).cuda()
 
                 mask_per_label = cluster_module.cluster_mask()
                 prototype_list = []

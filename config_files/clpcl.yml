@@ -1,6 +1,7 @@
 # Setup
 setup: clpcl
-train_method: proto
+train_method: clpcl
+version: cluster_module
 
 # special training parameter
 loss_alpha: 0.05

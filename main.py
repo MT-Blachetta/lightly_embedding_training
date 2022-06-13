@@ -54,7 +54,13 @@ for prefix in session_list:
     end_epoch = p['epochs']
     start_epoch = 0
 
-    clusterer = cluster_module(num_clusters=p['num_classes'],temperature=p['temperature'],gpu_id=0)
+    version = p['version']
+
+    if version in ['proto_loss','cluster_modul']:
+        clusterer = cluster_module(num_clusters=p['num_classes'],temperature=p['temperature'],gpu_id=0)
+        cluster_loader = torch.utils.data.DataLoader(dataset, num_workers=p['num_workers'],batch_size=p['batch_size'], pin_memory=True, collate_fn=collate_custom, drop_last=False, shuffle=False)
+        cluster_features = torch.zeros([len(dataset),p['feature_dim']])
+        cluster_features_I = torch.zeros([len(dataset),p['feature_dim']])
 
     #val_transform = transforms.Compose([
     #                transforms.CenterCrop(p['transformation_kwargs']['crop_size']),
@@ -62,9 +68,7 @@ for prefix in session_list:
     #                transforms.Normalize(**p['transformation_kwargs']['normalize'])])
     
     #full_dataset = get_val_dataset(p,val_transform)
-    cluster_loader = torch.utils.data.DataLoader(dataset, num_workers=p['num_workers'],batch_size=p['batch_size'], pin_memory=True, collate_fn=collate_custom, drop_last=False, shuffle=False)
-    cluster_features = torch.zeros([len(dataset),p['feature_dim']])
-    cluster_features_I = torch.zeros([len(dataset),p['feature_dim']])
+
 
 
     # load from checkpoint
@@ -78,39 +82,43 @@ for prefix in session_list:
         lr = adjust_learning_rate(p, optimizer, epoch)
         print('Adjusted learning rate to {:.5f}'.format(lr))
 
+
+        if version in ['proto_loss','cluster_modul']:
         # compute clustering
-        model.eval()
-        i = 0
-        with torch.no_grad():
-            model = model.cuda()
-            for batch in cluster_loader:
-                origin_batch = batch['image']
-                #print('origin_batch: ',origin_batch.shape)
-                bsize = len(origin_batch)
-                augmented_batch = batch['image_augmented'][0]
-                #print('augmented_batch: ',augmented_batch.shape)
-                origin_batch = origin_batch.cuda()
-                augmented_batch = augmented_batch.cuda()
-                first = model.group(origin_batch)
-                #print('first: ',first.shape)
-                second = model.group(augmented_batch)
-                #print('second: ',second.shape)
-                cluster_features[i:i+bsize] = first
-                cluster_features_I[i:i+bsize] = second
-                i += bsize
-            clusterer.features = cluster_features
-            #print('clusterer.features: ',clusterer.features.shape)
-            clusterer.features_I = cluster_features_I
-            #print('clusterer.features_I: ',clusterer.features.shape)
-            print('compute features for clustering OK')
-            clusterer.clustering()
+            model.eval()
+            i = 0
+            with torch.no_grad():
+                model = model.cuda()
+                for batch in cluster_loader:
+                    origin_batch = batch['image']
+                    #print('origin_batch: ',origin_batch.shape)
+                    bsize = len(origin_batch)
+                    augmented_batch = batch['image_augmented'][0]
+                    #print('augmented_batch: ',augmented_batch.shape)
+                    origin_batch = origin_batch.cuda()
+                    augmented_batch = augmented_batch.cuda()
+                    first = model.group(origin_batch)
+                    #print('first: ',first.shape)
+                    second = model.group(augmented_batch)
+                    #print('second: ',second.shape)
+                    cluster_features[i:i+bsize] = first
+                    cluster_features_I[i:i+bsize] = second
+                    i += bsize
+                clusterer.features = cluster_features
+                #print('clusterer.features: ',clusterer.features.shape)
+                clusterer.features_I = cluster_features_I
+                #print('clusterer.features_I: ',clusterer.features.shape)
+                print('compute features for clustering OK')
+                clusterer.clustering()
 
+            # Train
+            print('Train ...')
+            trainer.train_one_epoch(train_loader, model, optimizer, epoch, clusterer)
 
-
-        # Train
-        print('Train ...')
-        trainer.train_one_epoch(train_loader, model, optimizer, epoch, clusterer)
-        # save training configuration to checkpoint 
+        else: 
+            print('Train ...')
+            trainer.train_one_epoch(train_loader, model, optimizer, epoch)
+            # save training configuration to checkpoint 
         
 
     torch.save(trainer.best_model.get_backbone().state_dict(),p['result_save_path'])

@@ -186,7 +186,8 @@ class cluster_module(object):
             cluster_vectors = features[cluster_mask]
             centers.append(torch.sum(cluster_vectors,dim=0)/len(cluster_vectors))
 
-        return bcl, centers
+        
+        return bcl, torch.stack(centers,dim=0)
 
 
 
