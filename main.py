@@ -25,7 +25,7 @@ for prefix in session_list:
     print('§1_prefix: ',prefix) #@
     #ok#
     p = create_config(args.root_dir, "config_files/"+prefix+'.yml', prefix)
-    print(p) #@
+    #print(p) #@
     #ok#
     transform = get_transform(p)
     print('§3_transform: ',str(transform)) #@
@@ -37,16 +37,16 @@ for prefix in session_list:
     print('§5_train_loader',str(train_loader)) #@
     #ok#
     backbone = get_backbone(p)
-    print('§6_backbone: ',str(backbone)) #@
+    #print('§6_backbone: ',str(backbone)) #@
     #ok#
     model = get_model(p,backbone['backbone'],backbone['out_dim'])
-    print('§7_model ',str(model)) #@
+    #print('§7_model ',str(model)) #@
     #ok#
     loss_function = get_criterion(p)
     print('§8_criterion: ',str(loss_function)) #@
     #ok#
     optimizer = get_optimizer(p,model)
-    print('§9_optimizer: ',str(optimizer)) #@
+    #print('§9_optimizer: ',str(optimizer)) #@
     #ok#
     trainer = get_trainer(p,loss_function)
     print('§10_trainer: ',str(trainer)) #@
@@ -85,19 +85,27 @@ for prefix in session_list:
             model = model.cuda()
             for batch in cluster_loader:
                 origin_batch = batch['image']
+                print('origin_batch: ',origin_batch.shape)
                 bsize = len(origin_batch)
                 augmented_batch = batch['image_augmented'][0]
+                print('augmented_batch: ',augmented_batch.shape)
                 origin_batch = origin_batch.cuda()
                 augmented_batch = augmented_batch.cuda()
                 first = model.group(origin_batch)
+                print('first: ',first.shape)
                 second = model.group(augmented_batch)
+                print('second: ',second.shape)
                 cluster_features[i:i+bsize] = first
                 cluster_features_I[i:i+bsize] = second
                 i += bsize
             clusterer.features = cluster_features
+            print('clusterer.features: ',clusterer.features.shape)
             clusterer.features_I = cluster_features_I
+            print('clusterer.features_I: ',clusterer.features.shape)
             print('compute features for clustering OK')
             clusterer.clustering()
+
+
 
         # Train
         print('Train ...')
