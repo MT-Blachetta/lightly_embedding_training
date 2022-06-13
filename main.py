@@ -81,18 +81,22 @@ for prefix in session_list:
         # compute clustering
         model.eval()
         i = 0
-        for batch in cluster_loader:
-            origin_batch = batch['image']
-            bsize = len(origin_batch)
-            augmented_batch = batch['image_augmented'][0]
-            first = model.group(origin_batch)
-            second = model.group(augmented_batch)
-            cluster_features[i:i+bsize] = first
-            cluster_features_I[i:i+bsize] = second
-            i += bsize
-        clusterer.features = cluster_features
-        clusterer.features_I = cluster_features_I
-        clusterer.clustering()
+        with torch.no_grad():
+            model = model.cuda()
+            for batch in cluster_loader:
+                origin_batch = batch['image']
+                bsize = len(origin_batch)
+                augmented_batch = batch['image_augmented'][0]
+                origin_batch = origin_batch.cuda()
+                augmented_batch = augmented_batch.cuda()
+                first = model.group(origin_batch)
+                second = model.group(augmented_batch)
+                cluster_features[i:i+bsize] = first
+                cluster_features_I[i:i+bsize] = second
+                i += bsize
+            clusterer.features = cluster_features
+            clusterer.features_I = cluster_features_I
+            clusterer.clustering()
 
         # Train
         print('Train ...')

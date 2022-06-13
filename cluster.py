@@ -60,7 +60,7 @@ class cluster_module(object):
         D, I = index.search(x, 1) # for each sample, find cluster distance and assignments
         im2cluster = [int(n[0]) for n in I] # cluster assignments in sample-order
 
-        print(len(im2cluster))
+        #print(len(im2cluster))
             
             # get cluster centroids
         centroids = faiss.vector_to_array(clus.centroids).reshape(k,d)
@@ -102,14 +102,14 @@ class cluster_module(object):
             
         return im2cluster
 
-    def cluster_data(self,x,augmented=False):
+    def cluster_data(self,x,seed=0,augmented=False):
         """
         Args:
             x: data to be clustered
         """        
         print('performing kmeans clustering')
 
-        seed = 0
+        #seed = 0
         # intialize faiss clustering parameters
         d = x.shape[1] #  d = feature_dim
         k = int(self.num_cluster) # number of clusters for the run
@@ -119,7 +119,7 @@ class cluster_module(object):
         clus.niter = 20
         clus.nredo = 5
         clus.seed = seed
-        #clus.max_points_per_centroid = 1000
+        clus.max_points_per_centroid = 100000
         clus.min_points_per_centroid = 2
 
             # CLUSTERING PARALLEL EXECUTION
@@ -148,8 +148,8 @@ class cluster_module(object):
         return im2cluster
 
     def clustering(self):
-        self.cluster_data(self.features,augmented=False)
-        self.cluster_data(self.features_I,augmented=True)
+        self.cluster_data(self.features.cpu().numpy(),seed=0,augmented=False)
+        self.cluster_data(self.features_I.cpu().numpy(),seed=1,augmented=True)
 
 
     def batch_cluster_ids(self,batch):
