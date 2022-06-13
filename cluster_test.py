@@ -88,7 +88,7 @@ def run_kmeans(x, num_cluster, temperature=0.5, gpu_id=0):
 
 
 dummy = torch.rand([5000,128])
-results = run_kmeans(dummy,10)
+results = run_kmeans(dummy.cpu().numpy(),10)
 print(results['centroids'].shape)
 print(results['density'].shape)
 print(results['im2cluster'].shape)
