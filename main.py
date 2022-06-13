@@ -2,7 +2,9 @@ import argparse
 import torch
 from termcolor import colored
 from config import create_config
-from functionality import get_trainer, get_model, get_backbone, get_optimizer, get_dataset, get_dataloader, get_criterion, get_transform, adjust_learning_rate
+from cluster import cluster_module
+import torchvision.transforms as transforms
+from functionality import get_trainer, get_model, get_backbone, get_optimizer, get_dataset, get_val_dataset ,get_dataloader, get_criterion, get_transform, adjust_learning_rate, collate_custom
 
 FLAGS = argparse.ArgumentParser(description='loss training')
 FLAGS.add_argument('-gpu',help='number as gpu identifier')
@@ -52,6 +54,19 @@ for prefix in session_list:
     end_epoch = p['epochs']
     start_epoch = 0
 
+    clusterer = cluster_module(num_clusters=p['num_classes'],temperature=p['temperature'],gpu_id=0)
+
+    #val_transform = transforms.Compose([
+    #                transforms.CenterCrop(p['transformation_kwargs']['crop_size']),
+    #                transforms.ToTensor(), 
+    #                transforms.Normalize(**p['transformation_kwargs']['normalize'])])
+    
+    #full_dataset = get_val_dataset(p,val_transform)
+    cluster_loader = torch.utils.data.DataLoader(dataset, num_workers=p['num_workers'],batch_size=p['batch_size'], pin_memory=True, collate_fn=collate_custom, drop_last=False, shuffle=False)
+    cluster_features = torch.zeros([len(dataset),p['feature_dim']])
+    cluster_features_I = torch.zeros([len(dataset),p['feature_dim']])
+
+
     # load from checkpoint
 
     # Main loop
@@ -62,10 +77,28 @@ for prefix in session_list:
         # Adjust lr
         lr = adjust_learning_rate(p, optimizer, epoch)
         print('Adjusted learning rate to {:.5f}'.format(lr))
+
+        # compute clustering
+        model.eval()
+        i = 0
+        for batch in cluster_loader:
+            origin_batch = batch['image']
+            bsize = len(origin_batch)
+            augmented_batch = batch['image_augmented'][0]
+            first = model.group(origin_batch)
+            second = model.group(augmented_batch)
+            cluster_features[i:i+bsize] = first
+            cluster_features_I[i:i+bsize] = second
+            i += bsize
+        clusterer.features = cluster_features
+        clusterer.features_I = cluster_features_I
+        clusterer.clustering()
+
         # Train
         print('Train ...')
-        trainer.train_one_epoch(train_loader, model, optimizer, epoch)
+        trainer.train_one_epoch(train_loader, model, optimizer, epoch, clusterer)
         # save training configuration to checkpoint 
+        
 
     torch.save(trainer.best_model.get_backbone().state_dict(),p['result_save_path'])
     print("-----------TRAINING_PROCESS_FINISHED--------------")

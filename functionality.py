@@ -106,6 +106,32 @@ def get_transform(p):
 
     return train_transformation
 
+
+def get_val_dataset(p,transform):
+
+    split = p['split']
+    #dataset_type = p['dataset_type']
+
+    if p['train_db_name'] == 'cifar-10':
+        from dataset import CIFAR10
+        dataset = CIFAR10(train=True, transform=transform, download=True)
+        #eval_dataset = CIFAR10(train=False, transform=val_transformations, download=True)
+
+    elif p['train_db_name'] == 'cifar-20':
+        from dataset import CIFAR20
+        dataset = CIFAR20(train=True, transform=transform, download=True)
+        #eval_dataset = CIFAR20(train=False, transform=transform, download=True)
+
+    elif p['train_db_name'] == 'stl-10':
+        from dataset import STL10
+        dataset = STL10(split=split, transform=transform, download=False)
+        #eval_dataset = STL10_trainNtest(path='/space/blachetta/data',aug=val_transformations)
+        #eval_dataset = STL10(split='train',transform=val_transformations,download=False)
+
+    else:
+        raise ValueError('Invalid train dataset {}'.format(p['train_db_name']))
+
+
 def get_dataset(p,transform):
 
     split = p['split']
@@ -201,6 +227,12 @@ def get_trainer(p,criterion):
     if p['train_method'] == 'clpcl':
         from training import Trainer_clPcl
         return Trainer_clPcl(p,criterion)
+
+    if p['train_method'] == 'proto':
+        from training import Trainer_proto
+        return Trainer_proto(p,criterion)
+
+    else: raise ValueError('trainer not implemented')
 
 def adjust_learning_rate(p, optimizer, epoch):
     lr = p['optimizer_kwargs']['lr']

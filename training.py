@@ -195,7 +195,7 @@ class Trainer_proto(object):
         self.best_model = None
         self.nxt_criterion = SimCLRLoss(p['temperature'])
 
-    def train_one_epoch(self, train_loader, model, optimizer, epoch, cluster_module=None):
+    def train_one_epoch(self, train_loader, model, optimizer, epoch, cluster_module):
         
         losses = AverageMeter('Loss', ':.4e')
         progress = ProgressMeter(len(train_loader),[losses],prefix="Epoch: [{}]".format(epoch))
@@ -230,26 +230,29 @@ class Trainer_proto(object):
                 #alpha = 0.1
                 divzero = 0.1
                 ov = original_view.cpu().detach().numpy()
-                #print(ov.shape)
                 av = augmented_view.cpu().detach().numpy()
                 k = self.num_clusters
 
-                
-                labels_, cluster_centers = cluster_module.cluster_batch(indices_batch)
-                labels_I, cluster_centers_I = cluster_module.cluster_batch_I(indices_batch)
+                cluster_module.batch_cluster_ids(indices_batch)
+                labels_, cluster_centers = cluster_module.cluster_batch(original_view)
+                labels_I, cluster_centers_I = cluster_module.cluster_batch(augmented_view,augmented=True)
 
-                mask_per_label = cluster_module.cluster_mask(indices_batch)
+                mask_per_label = cluster_module.cluster_mask()
                 prototype_list = []
                 prototype_list_I = []
+
                 for mask in mask_per_label:
                     resultant = torch.zeros([batch_size,feature_dim])
                     resultant_I = torch.zeros([batch_size,feature_dim])
                     for j in range(batch_size): 
                         resultant[j] = original_view[j,:]*mask[j]
                         resultant_I[j] = augmented_view[j,:]*mask[j]
-                    
-                    prototype_list.append(torch.sum(resultant,dim=0))
-                    prototype_list_I.append(torch.sum(resultant_I,dim=0))
+
+                    #num_cluster_instances = torch.sum(mask)
+                    instance_sum = torch.sum(resultant,dim=0)
+                    instance_sum_I = torch.sum(resultant_I,dim=0)                  
+                    prototype_list.append(instance_sum)
+                    prototype_list_I.append(instance_sum_I)
 
                 prototypes = torch.stack(prototype_list)
                 prototypes_I = torch.stack(prototype_list_I)
@@ -261,12 +264,6 @@ class Trainer_proto(object):
                 proto_loss = self.nxt_criterion(prototype_eval)
 
 
-
-
-
-                #cluster_centers
-                #MI_kmeans_results.append( cluster_centers_I )
-                    # c -> k
                 center = [ cluster_centers[i] for i in range(k) ]
                 center_I = [ cluster_centers_I[i] for i in range(k) ]
                 cdat = [ x.unsqueeze(0).expand(batch_size,feature_dim) for x in center]
@@ -339,3 +336,5 @@ class Trainer_proto(object):
 
             if i % 25 == 0:
                 progress.display(i)
+
+

@@ -1,6 +1,6 @@
 # Setup
 setup: clpcl
-train_method: clpcl
+train_method: proto
 
 # special training parameter
 loss_alpha: 0.05
@@ -26,6 +26,7 @@ num_classes: 20
 split: train+unlabeled
 
 # Loss
+temperature: 0.1
 criterion: clpcl
 criterion_kwargs:
    temperature: 0.1 
