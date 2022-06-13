@@ -96,6 +96,7 @@ for prefix in session_list:
                 i += bsize
             clusterer.features = cluster_features
             clusterer.features_I = cluster_features_I
+            print('compute features for clustering OK')
             clusterer.clustering()
 
         # Train

@@ -260,8 +260,11 @@ class Trainer_proto(object):
                 prototypes_I = torch.nn.functional.normalize(prototypes_I)
 
                 prototype_eval = torch.stack([prototypes,prototypes_I],dim=1)
+                prototype_eval = prototype_eval.cuda()
 
                 proto_loss = self.nxt_criterion(prototype_eval)
+
+                print('Proto loss: ',proto_loss)
 
 
                 center = [ cluster_centers[i] for i in range(k) ]
