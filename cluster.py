@@ -160,7 +160,7 @@ class cluster_module(object):
 
         batch_cluster_I = torch.zeros(batch.shape)
         for j in range(len(batch_cluster_I)): batch_cluster_I[j] = self.im2cluster_I[int(batch[j])]
-        self.batch_cluster_I
+        self.batch_cluster_I = batch_cluster
 
 
     def cluster_mask(self):
