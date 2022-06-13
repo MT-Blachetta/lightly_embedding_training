@@ -1,7 +1,7 @@
 # Setup
 setup: clpcl
 train_method: clpcl
-version: cluster_module
+version: cluster_modul
 
 # special training parameter
 loss_alpha: 0.05
