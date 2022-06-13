@@ -43,7 +43,7 @@ def get_model(p,backbone,backbone_dim):
 
     elif p['base_model'] == 'simclr':
         from models import simclr_model
-        # TO DO
+        return simclr_model(backbone, backbone_dim, p['model_kwargs']['hidden_dim'], p['model_kwargs']['out_dim'])
 
     elif p['base_model'] == 'byol':
         from models import byol_model
