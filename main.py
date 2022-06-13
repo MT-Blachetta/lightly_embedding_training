@@ -85,23 +85,23 @@ for prefix in session_list:
             model = model.cuda()
             for batch in cluster_loader:
                 origin_batch = batch['image']
-                print('origin_batch: ',origin_batch.shape)
+                #print('origin_batch: ',origin_batch.shape)
                 bsize = len(origin_batch)
                 augmented_batch = batch['image_augmented'][0]
-                print('augmented_batch: ',augmented_batch.shape)
+                #print('augmented_batch: ',augmented_batch.shape)
                 origin_batch = origin_batch.cuda()
                 augmented_batch = augmented_batch.cuda()
                 first = model.group(origin_batch)
-                print('first: ',first.shape)
+                #print('first: ',first.shape)
                 second = model.group(augmented_batch)
-                print('second: ',second.shape)
+                #print('second: ',second.shape)
                 cluster_features[i:i+bsize] = first
                 cluster_features_I[i:i+bsize] = second
                 i += bsize
             clusterer.features = cluster_features
-            print('clusterer.features: ',clusterer.features.shape)
+            #print('clusterer.features: ',clusterer.features.shape)
             clusterer.features_I = cluster_features_I
-            print('clusterer.features_I: ',clusterer.features.shape)
+            #print('clusterer.features_I: ',clusterer.features.shape)
             print('compute features for clustering OK')
             clusterer.clustering()
 

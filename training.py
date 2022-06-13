@@ -235,11 +235,13 @@ class Trainer_proto(object):
 
                 cluster_module.batch_cluster_ids(indices_batch)
 
-                print('clusterer.batch_cluster: ',cluster_module.batch_cluster.shape)
-                print('clusterer.batch_cluster_I: ',cluster_module.batch_cluster_I.shape)
+                #print('clusterer.batch_cluster: ',cluster_module.batch_cluster.shape)
+                #print('clusterer.batch_cluster_I: ',cluster_module.batch_cluster_I.shape)
 
                 labels_, cluster_centers = cluster_module.cluster_batch(original_view)
                 labels_I, cluster_centers_I = cluster_module.cluster_batch(augmented_view,augmented=True)
+                cluster_centers = torch.Tensor(cluster_centers).cuda()
+                cluster_centers_I = torch.Tensor(cluster_centers_I).cuda()
 
                 mask_per_label = cluster_module.cluster_mask()
                 prototype_list = []
@@ -268,21 +270,21 @@ class Trainer_proto(object):
 
                 proto_loss = self.nxt_criterion(prototype_eval)
 
-                print('Proto loss: ',proto_loss)
-                print('labels_: len ',len(labels_),' type ',type(labels_), ' [0] ',labels_[0])
-                print('labels_I: len ',len(labels_I),' type ',type(labels_I), ' [0] ',labels_I[0])
-                print('cluster_centers: len ',len(cluster_centers),' type ',type(cluster_centers), ' [0] ',cluster_centers[0])
-                print('cluster_centers_I: len ',len(cluster_centers_I),' type ',type(cluster_centers_I), ' [0] ',cluster_centers_I[0])
+                #print('Proto loss: ',proto_loss)
+                #print('labels_: len ',len(labels_),' type ',type(labels_), ' [0] ',labels_[0])
+                #print('labels_I: len ',len(labels_I),' type ',type(labels_I), ' [0] ',labels_I[0])
+                #print('cluster_centers: len ',len(cluster_centers),' type ',type(cluster_centers), ' [0] ',cluster_centers[0])
+                #print('cluster_centers_I: len ',len(cluster_centers_I),' type ',type(cluster_centers_I), ' [0] ',cluster_centers_I[0])
 
 
                 center = [ cluster_centers[i] for i in range(k) ]
-                print('center len: ',len(center))
-                print('center[0]: ',type(center[0]))
-                print('center[0]: ',center[0].shape)
+                #print('center len: ',len(center))
+                #print('center[0]: ',type(center[0]))
+                #print('center[0]: ',center[0].shape)
                 center_I = [ cluster_centers_I[i] for i in range(k) ]
-                print('center_I len: ',len(center_I))
-                print('center_I[0]: ',type(center_I[0]))
-                print('center_I[0]: ',center_I[0].shape)
+                #print('center_I len: ',len(center_I))
+                #print('center_I[0]: ',type(center_I[0]))
+                #print('center_I[0]: ',center_I[0].shape)
                 cdat = [ x.unsqueeze(0).expand(batch_size,feature_dim) for x in center]
                 cmatrix = torch.cat(cdat,1)
                 cdat_I = [ x.unsqueeze(0).expand(batch_size,feature_dim) for x in center_I]
