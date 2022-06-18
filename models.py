@@ -134,7 +134,7 @@ class clpcl_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encode
     Build a MoCo model with: a query encoder, a key encoder, and a queue
     https://arxiv.org/abs/1911.05722
     """
-    def __init__(self, backbone ,backbone_dim ,dim=128, K=65536, m=0.999, T=0.07, mlp=False):
+    def __init__(self, backbone ,backbone_dim ,dim=128, K=65536, m=0.999, T=0.07, mlp=False,hidden_dim=512):
         """
         dim: feature dimension (default: 128)
         K: queue size; number of negative keys (default: 65536)
@@ -156,9 +156,12 @@ class clpcl_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encode
         self.group_head = nn.Linear(backbone_dim,dim)
 
         if mlp:  # hack: brute-force replacement
-            dim_mlp = self.encoder_q.fc.weight.shape[1]
-            self.encoder_q.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_q.fc)
-            self.encoder_k.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_k.fc)
+            #dim_mlp = self.encoder_q.fc.weight.shape[1]
+            #self.encoder_q.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_q.fc)
+            #self.encoder_k.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_k.fc)
+            self.instance_head_k = nn.Sequential(nn.Linear(backbone_dim,hidden_dim),nn.ReLU(),nn.Linear(hidden_dim,dim))
+            self.instance_head_q = nn.Sequential(nn.Linear(backbone_dim,hidden_dim),nn.ReLU(),nn.Linear(hidden_dim,dim))
+            self.group_head = nn.Sequential(nn.Linear(backbone_dim,hidden_dim),nn.ReLU(),nn.Linear(hidden_dim,dim))
 
     
         for param_q, param_k in zip(self.encoder_q.parameters(), self.encoder_k.parameters()):

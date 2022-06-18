@@ -4,10 +4,10 @@ from termcolor import colored
 from config import create_config
 from cluster import cluster_module
 import torchvision.transforms as transforms
-from functionality import get_trainer, get_model, get_backbone, get_optimizer, get_dataset, get_val_dataset ,get_dataloader, get_criterion, get_transform, adjust_learning_rate, collate_custom
+from functionality import get_trainer, get_model, get_backbone, get_optimizer, get_dataset, get_val_dataset ,get_dataloader, get_criterion, get_transform, adjust_learning_rate, collate_custom, validation_loader, evaluate_knn
 
 FLAGS = argparse.ArgumentParser(description='loss training')
-FLAGS.add_argument('-gpu',help='number as gpu identifier')
+FLAGS.add_argument('-gpu',help='number as gpu identifier',default=0)
 FLAGS.add_argument('-list',help='path to the trial list')
 FLAGS.add_argument('--root_dir', help='root directory for saves', default='RESULTS')
 #FLAGS.add_argument('--config_exp', help='Location of experiments config file')
@@ -51,10 +51,13 @@ for prefix in session_list:
     trainer = get_trainer(p,loss_function)
     print('§10_trainer: ',str(trainer)) #@
     #ok#
+    val_loader = validation_loader(p)
+
     end_epoch = p['epochs']
     start_epoch = 0
 
     version = p['version']
+    p['device'] = 'cuda:'+str(args.gpu)
 
     if version in ['proto_loss','cluster_modul']:
         clusterer = cluster_module(num_clusters=p['num_classes'],temperature=p['temperature'],gpu_id=0)
@@ -108,8 +111,8 @@ for prefix in session_list:
                 #print('clusterer.features: ',clusterer.features.shape)
                 clusterer.features_I = cluster_features_I
                 #print('clusterer.features_I: ',clusterer.features.shape)
-                print('compute features for clustering OK')
                 clusterer.clustering()
+                print('compute features for clustering OK')
 
             # Train
             print('Train ...')
@@ -118,7 +121,9 @@ for prefix in session_list:
         else: 
             print('Train ...')
             trainer.train_one_epoch(train_loader, model, optimizer, epoch)
-            # save training configuration to checkpoint 
+            # save training configuration to checkpoint
+
+        evaluate_knn(p,val_loader,model,p['device'])
         
 
     torch.save(trainer.best_model.get_backbone().state_dict(),p['result_save_path'])

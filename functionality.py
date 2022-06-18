@@ -6,6 +6,8 @@ import math
 import numpy as np
 import collections
 from torch._six import string_classes
+import torchvision.transforms as transforms
+from models import clpcl_model
 int_classes = int
 
 
@@ -110,27 +112,47 @@ def get_transform(p):
 
 def get_val_dataset(p,transform):
 
-    split = p['split']
+    #split = p['split']
     #dataset_type = p['dataset_type']
 
     if p['train_db_name'] == 'cifar-10':
         from dataset import CIFAR10
-        dataset = CIFAR10(train=True, transform=transform, download=True)
+        dataset = CIFAR10(train=False, transform=transform, download=True)
         #eval_dataset = CIFAR10(train=False, transform=val_transformations, download=True)
 
     elif p['train_db_name'] == 'cifar-20':
         from dataset import CIFAR20
-        dataset = CIFAR20(train=True, transform=transform, download=True)
+        dataset = CIFAR20(train=False, transform=transform, download=True)
         #eval_dataset = CIFAR20(train=False, transform=transform, download=True)
 
     elif p['train_db_name'] == 'stl-10':
         from dataset import STL10
-        dataset = STL10(split=split, transform=transform, download=False)
+        dataset = STL10(split='test', transform=transform, download=False)
         #eval_dataset = STL10_trainNtest(path='/space/blachetta/data',aug=val_transformations)
         #eval_dataset = STL10(split='train',transform=val_transformations,download=False)
 
     else:
         raise ValueError('Invalid train dataset {}'.format(p['train_db_name']))
+
+    return dataset
+
+def get_val_transformations(p):
+    return transforms.Compose([
+            transforms.CenterCrop(p['transformation_kwargs']['crop_size']),
+            transforms.ToTensor(), 
+            transforms.Normalize(**p['transformation_kwargs']['normalize'])])
+
+def get_val_dataloader(p, dataset):
+    return torch.utils.data.DataLoader(dataset, num_workers=p['num_workers'],
+            batch_size=p['batch_size'], pin_memory=True, collate_fn=collate_custom,
+            drop_last=False, shuffle=False)
+
+def validation_loader(p):
+    transformation = get_val_transformations(p)
+    vds = get_val_dataset(p,transformation)
+    vloader = get_val_dataloader(p,vds)
+
+    return vloader
 
 
 def get_dataset(p,transform):
@@ -295,4 +317,180 @@ def adjust_learning_rate(p, optimizer, epoch):
         param_group['lr'] = lr
 
     return lr
+
+
+class MemoryBank(object):
+    def __init__(self, n, dim, num_classes, temperature):
+        self.n = n # number of instances with features in MemoryBank
+        self.dim = dim # feature dimension
+        self.features = torch.FloatTensor(self.n, self.dim) # instance features in an array/matrix 
+        self.targets = torch.LongTensor(self.n) # list/sequence of the instance labels
+        self.ptr = 0 # STATE, memory bank size / pointing to the last element
+        self.device = 'cpu'
+        self.K = 100 # number of k nearest neighbours
+        self.temperature = temperature
+        self.C = num_classes
+
+    def weighted_knn(self, predictions): # perform weighted knn
+        
+        retrieval_one_hot = torch.zeros(self.K, self.C).to(self.device) # for each K nearest neighbors, the class label as one-hot-Vektor
+        batchSize = predictions.shape[0] # number of points the weighted_knn predeiction is performed
+        
+        correlation = torch.matmul(predictions, self.features.t()) # dot product of the input features with all labeled MemoryBank features
+        # dot product equals the cosine similarity if feature vectors are normalized (unit length)
+        
+        set_zero = torch.zeros(correlation.shape[1])
+        for i in range( correlation.shape[0] ):
+            correlation[i] = torch.where( correlation[i] > 0.9999, set_zero, correlation[i] )
+ 
+        # The K nearest neighbors in the memory bank for each batch instance
+        # yd: topK highest similarity values - starting with the highest one
+        # yi: topK INDEXes with highest similarity values - starting with the highest one
+        yd, yi = correlation.topk(self.K, dim=1, largest=True, sorted=True)  
+        
+        # class labels of the memoryBank instances COPIED for each batch instance at dim=0
+        candidates = self.targets.view(1,-1).expand(batchSize, -1)
+        
+        retrieval = torch.gather(candidates, 1, yi) # class labels of the memoryBank K_NN for each batch instance
+        
+        retrieval_one_hot.resize_(batchSize * self.K, self.C).zero_() # class as one-hot-Vector: for all batches the K Nearest Neighbors stacked in one dimension
+        
+        retrieval_one_hot.scatter_(1, retrieval.view(-1, 1), 1) # class labels of all kNN of all batches in one-hot encoding
+        
+        
+        # div_ := alle Werte dividieren, exp_ := in die exponentialfunktion einsetzen
+        yd_transform = yd.clone().div_(self.temperature).exp_() # [batch-size,self.K]  
+        
+        yd_sum = 1/torch.sum(yd_transform,1) # Summe der Ähnlichkeitswerte aller kNN's per batch
+        #torch.mul(yd_transform,yd_sum.view(-1,1)) # relativer Anteil eines kNN an der Summe der Ähnlichkeitswerte aller kNN's 
+        
+        """retrieval_one_hot.view(batchSize, -1 , self.C)""" # Wahrscheinlichkeitswert für die Zugehörigkeit der kNN zu ihrer Klasse
+        # One-Hot Repräsentation der Klassenangehörigkeit der k-NN's(dim) für jede batch instance(dim)
+        
+        """yd_transform.view(batchSize, -1, 1)"""
+        # Der Distanz/Ähnlichkeitswert(probabilities) der k-NN's(dim) für jede batch instance(dim)
+        # torch.mul trägt im one-hot-Vektor an der Stelle des Klassenlabels die distance/similarity des kNN ein (die Gewichtung des kNN)
+        
+        probs = torch.sum(torch.mul(retrieval_one_hot.view(batchSize, -1 , self.C), 
+                          yd_transform.view(batchSize, -1, 1)), 1) # Für jede Klasse werden die Gewichte aller KNN's dieser Klasse addiert
+                          
+        class_stats = torch.mul(probs,yd_sum.view(-1,1)) # Werte von [0,1] für jede Klasse
+        # Die weighted_knn Summe aller kNN's einer Klasse befindet sich im one-hot-Vektor am Index der KlassenID   
+        
+        _, class_preds = probs.sort(1, True) # sortiert man die Indices nach Höhe der weighted_knn_sum erhält man die Klasse wo es die nahesten KNN's gibt 
+        
+        class_pred = class_preds[:, 0] # class assignments of the weighted_knn Algorithm for each batch instance
+
+        return class_pred, class_stats
+
+    def knn(self, predictions):
+        # perform knn
+        correlation = torch.matmul(predictions, self.features.t()) # [batch_size,self.n] Distanz/Ähnlichkeitswert zwischen batch(predictions) und Datensatz(MemoryBank)
+        
+        sample_pred = torch.argmax(correlation, dim=1) # [batch_size] die Indices der Batch 1-Nearest Neighbors 
+        
+        class_pred = torch.index_select(self.targets, 0, sample_pred) # [batch_size] Klassenlabels der 1-Nearest Neighbors pro batch
+        
+        return class_pred
+
+
+    def reset(self):
+        self.ptr = 0 
+        
+    def update(self, features, targets):
+        b = features.size(0) # probably the batch-size of the features that updates the memory bank
+        
+        assert(b + self.ptr <= self.n) # der pointer darf nur bis zur Länge self.n der MemoryBank gehen
+        
+        self.features[self.ptr:self.ptr+b].copy_(features.detach()) # füge die features aus der batch zur MemoryBank hinzu
+        self.targets[self.ptr:self.ptr+b].copy_(targets.detach()) # labels der Trainingsdaten als integer [0,9]
+        self.ptr += b
+
+    def to(self, device):
+        self.features = self.features.to(device)
+        self.targets = self.targets.to(device)
+        self.device = device
+
+    def cpu(self):
+        self.to('cpu')
+
+    def cuda(self):
+        self.to('cuda:0')
+
+
+class AverageMeter(object):
+    def __init__(self,name, fmt=':f'):
+        self.name = name
+        self.fmt = fmt
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+    def __str__(self):
+        fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
+        return fmtstr.format(**self.__dict__)
+
+
+def evaluate_knn(p,val_dataloader,model,device='cuda:0'):
+
+    model.eval()
+    i = 0
+    features = []
+    targets = []
+    with torch.no_grad():
+        model = model.to(device)
+        for batch in val_dataloader:
+            imgs = batch['image']
+            labels = batch['target']
+
+            imgs = imgs.to(device)
+            labels = labels.to(device)
+
+            if isinstance(model,clpcl_model):
+                features.append(model.group(imgs))
+            else:
+               features.append(model(imgs))
+
+            targets.append(labels)
+
+        #features_tensor = torch.cat(features)
+        targets_tensor = torch.cat(targets)
+      
+        
+    dsize = len(targets_tensor) #[returns the first dimension size of targets]
+
+    memory_bank = MemoryBank(int(dsize), p['feature_dim'], p['num_classes'], p['temperature'])
+    memory_bank.reset()
+    memory_bank.to(device)
+    for f, l in zip(features,targets): memory_bank.update(f, l)
+    memory_bank.to(device)
+    topmeter = AverageMeter('Acc@1', ':6.2f')
+
+    for output, target in zip(features, labels):
+
+        w_nn, class_stats = memory_bank.weighted_knn(output)
+        correct_classmask = torch.eq(w_nn, target).float()
+        acc1 = 100*torch.mean(correct_classmask)
+        topmeter.update(acc1.item(), output.size(0)) 
+
+    print('Result of kNN evaluation is %.2f' %(topmeter.avg))
+
+    return
+
+
+        #p['temperature']
+
+    
+
+
 
