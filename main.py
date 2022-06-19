@@ -126,5 +126,5 @@ for prefix in session_list:
         evaluate_knn(p,val_loader,model,p['device'])
         
 
-    torch.save(trainer.best_model.get_backbone().state_dict(),p['result_save_path'])
+    torch.save(trainer.best_model.state_dict(),p['result_save_path'])
     print("-----------TRAINING_PROCESS_FINISHED--------------")

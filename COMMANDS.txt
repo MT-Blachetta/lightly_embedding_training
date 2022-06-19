@@ -1,1 +1,1 @@
-python main.py -gpu 0 -list trial_list.txt --root_dir results
+python main.py -gpu 3 -list trial_list.txt --root_dir results

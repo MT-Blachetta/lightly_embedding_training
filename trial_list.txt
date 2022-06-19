@@ -1,1 +1,1 @@
-['clpcl']
+['barlowtwins_scatnet_stl10','barlowtwins_scatnet_cifar20']

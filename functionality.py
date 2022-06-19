@@ -115,17 +115,17 @@ def get_val_dataset(p,transform):
     #split = p['split']
     #dataset_type = p['dataset_type']
 
-    if p['train_db_name'] == 'cifar-10':
+    if p['val_db_name'] == 'cifar-10':
         from dataset import CIFAR10
         dataset = CIFAR10(train=False, transform=transform, download=True)
         #eval_dataset = CIFAR10(train=False, transform=val_transformations, download=True)
 
-    elif p['train_db_name'] == 'cifar-20':
+    elif p['val_db_name'] == 'cifar-20':
         from dataset import CIFAR20
         dataset = CIFAR20(train=False, transform=transform, download=True)
         #eval_dataset = CIFAR20(train=False, transform=transform, download=True)
 
-    elif p['train_db_name'] == 'stl-10':
+    elif p['val_db_name'] == 'stl-10':
         from dataset import STL10
         dataset = STL10(split='test', transform=transform, download=False)
         #eval_dataset = STL10_trainNtest(path='/space/blachetta/data',aug=val_transformations)
