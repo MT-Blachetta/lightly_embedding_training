@@ -3,7 +3,7 @@ setup: barlow
 train_method: barlowtwins
 version: barlow
 
-
+batch_size: 512 
 
 # Model
 backbone: scatnet
@@ -12,7 +12,7 @@ feature_dim: 2048
 model_kwargs:
     J: 2
     L: 16
-    input_size: [32, 32, 3] 
+    input_size: [96, 96, 3] 
     res_blocks: 30
     hidden_dim: 2048
     out_dim: 2048
@@ -41,12 +41,12 @@ optimizer_kwargs:
 scheduler: cosine
 scheduler_kwargs:
    lr_decay_rate: 0.1
-batch_size: 512 
+
 num_workers: 8
 
 
 # Transformations
-augmentation_strategy: simclr 
+augmentation_strategy: barlow
 augmentation_kwargs:
    local_crops_number: 4
    local_crops_scale: [0.05, 0.4]

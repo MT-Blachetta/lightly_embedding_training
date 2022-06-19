@@ -3,9 +3,6 @@ setup: barlow
 train_method: barlowtwins
 version: barlow
 
-# special training parameter
-loss_alpha: 0.05
-loss_lambda: 1
 
 
 # Model
