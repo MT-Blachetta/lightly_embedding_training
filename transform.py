@@ -221,7 +221,7 @@ class BarlowtwinsAugmentations(object):
     def __init__(self, p):
         self.aug1 = transforms.Compose([
             transforms.RandomResizedCrop(**p['augmentation_kwargs']['random_resized_crop'], interpolation=Image.BICUBIC),
-            transforms.RandomHorizontalFlip(p=['augmentation_kwargs']['random_horizontal_flip']),
+            transforms.RandomHorizontalFlip(p=p['augmentation_kwargs']['random_horizontal_flip']),
             transforms.RandomApply(
                 [transforms.ColorJitter(**p['augmentation_kwargs']['color_jitter'])],
                 p=0.8
