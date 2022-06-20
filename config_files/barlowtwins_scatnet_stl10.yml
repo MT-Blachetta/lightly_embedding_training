@@ -30,7 +30,7 @@ criterion_kwargs:
    temperature: 0.1 
 
 # Hyperparameters
-epochs: 3 # test purpose
+epochs: 400 
 
 optimizer: sgd
 optimizer_kwargs:
