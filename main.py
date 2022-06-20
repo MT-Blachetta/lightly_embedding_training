@@ -1,6 +1,7 @@
 import argparse
 import torch
 from termcolor import colored
+import copy
 from config import create_config
 from cluster import cluster_module
 import torchvision.transforms as transforms
@@ -73,7 +74,7 @@ for prefix in session_list:
     
     #full_dataset = get_val_dataset(p,val_transform)
 
-
+    #best_loss_model = copy.deepcopy(model) # need to compute avarage loss accordingly
 
     # load from checkpoint
 
@@ -121,10 +122,14 @@ for prefix in session_list:
 
         else: 
             print('Train ...')
-            #trainer.train_one_epoch(train_loader, model, optimizer, epoch)
-            # save training configuration to checkpoint
-        print('### EVAL KNN ###')
-        evaluate_knn(p,val_loader,model,p['device'])
+            trainer.train_one_epoch(train_loader, model, optimizer, epoch)
+            
+            # /TO DO: save training configuration to checkpoint
+
+        #print('### EVAL KNN ###')
+    with open('results.txt','a') as f:
+        knn_result = evaluate_knn(p,val_loader,model,p['device'])
+        f.writelines(prefix+': '+str(knn_result))
         
 
     torch.save(trainer.best_model.state_dict(),p['result_save_path'])

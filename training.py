@@ -82,6 +82,7 @@ class Trainer_nnclr(object):
             optimizer.zero_grad()
             print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
 
+
 #------------------------------------------------------------------
 
 class Trainer_barlowtwins(object):

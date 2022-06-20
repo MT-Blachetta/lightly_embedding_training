@@ -483,9 +483,9 @@ def evaluate_knn(p,val_dataloader,model,device='cuda:0'):
         acc1 = 100*torch.mean(correct_classmask)
         topmeter.update(acc1.item(), output.size(0)) 
 
-    print('Result of kNN evaluation is %.2f' %(topmeter.avg))
+    print('weighted_Knn: %.2f' %(topmeter.avg))
 
-    return
+    return topmeter.avg
 
 
         #p['temperature']
