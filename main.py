@@ -121,9 +121,9 @@ for prefix in session_list:
 
         else: 
             print('Train ...')
-            trainer.train_one_epoch(train_loader, model, optimizer, epoch)
+            #trainer.train_one_epoch(train_loader, model, optimizer, epoch)
             # save training configuration to checkpoint
-
+        print('### EVAL KNN ###')
         evaluate_knn(p,val_loader,model,p['device'])
         
 
