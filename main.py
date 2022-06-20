@@ -25,6 +25,7 @@ for prefix in session_list:
     print('§1_prefix: ',prefix) #@
     #ok#
     p = create_config(args.root_dir, "config_files/"+prefix+'.yml', prefix)
+    p['device'] = 'cuda:'+str(args.gpu)
     #print(p) #@
     #ok#
     transform = get_transform(p)
@@ -57,7 +58,7 @@ for prefix in session_list:
     start_epoch = 0
 
     version = p['version']
-    p['device'] = 'cuda:'+str(args.gpu)
+    
 
     if version in ['proto_loss','cluster_modul']:
         clusterer = cluster_module(num_clusters=p['num_classes'],temperature=p['temperature'],gpu_id=0)
