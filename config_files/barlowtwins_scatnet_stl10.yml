@@ -3,7 +3,7 @@ setup: barlow
 train_method: barlowtwins
 version: barlow
 
-batch_size: 512 
+batch_size: 128 
 
 # Model
 backbone: scatnet

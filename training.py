@@ -99,13 +99,13 @@ class Trainer_barlowtwins(object):
             originImage_batch = batch['image']
             augmentedImage_batch_list = batch['image_augmented']
 
-            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
+            originImage_batch = originImage_batch.to(self.device)
             z0 = model(originImage_batch)
 
             loss = 0
             
             for augmentedImage_batch in augmentedImage_batch_list:
-                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
+                augmentedImage_batch = augmentedImage_batch.to(self.device)
                 z1 = model(augmentedImage_batch)
                 loss += self.criterion(z0, z1)
 
@@ -132,13 +132,13 @@ class Trainer_simsiam(object):
             originImage_batch = batch['image']
             augmentedImage_batch_list = batch['image_augmented']
 
-            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
+            originImage_batch = originImage_batch.to(self.device)
             z0, p0 = model(originImage_batch)
 
             loss = 0
             
             for augmentedImage_batch in augmentedImage_batch_list:
-                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
+                augmentedImage_batch = augmentedImage_batch.to(self.device)
                 z1, p1 = model(augmentedImage_batch)
 
                 loss += 0.5 * (self.criterion(z0, p1) + self.criterion(z1, p0))
@@ -169,13 +169,13 @@ class Trainer_simclr(object):
             originImage_batch = batch['image']
             augmentedImage_batch_list = batch['image_augmented']
 
-            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
+            originImage_batch = originImage_batch.to(self.device)
             z0 = model(originImage_batch)
 
             loss = 0
             
             for augmentedImage_batch in augmentedImage_batch_list:
-                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
+                augmentedImage_batch = augmentedImage_batch.to(self.device)
                 z1 = model(augmentedImage_batch)
                 loss += self.criterion(z0, z1)
 
@@ -202,14 +202,14 @@ class Trainer_byol(object):
             originImage_batch = batch['image']
             augmentedImage_batch_list = batch['image_augmented']
 
-            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
+            originImage_batch = originImage_batch.to(self.device)
             p0 = model(originImage_batch)
             z0 = model.forward_momentum(originImage_batch)
 
             loss = 0
             
             for augmentedImage_batch in augmentedImage_batch_list:
-                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
+                augmentedImage_batch = augmentedImage_batch.to(self.device)
                 p1 = model(augmentedImage_batch)
                 z1 = model.forward_momentum(augmentedImage_batch)
                 loss += 0.5 * (self.criterion(p0, z1) + self.criterion(p1, z0))
