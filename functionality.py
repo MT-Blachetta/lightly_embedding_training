@@ -336,10 +336,10 @@ class MemoryBank(object):
         retrieval_one_hot = torch.zeros(self.K, self.C).to(self.device) # for each K nearest neighbors, the class label as one-hot-Vektor
         batchSize = predictions.shape[0] # number of points the weighted_knn predeiction is performed
         
-        correlation = torch.matmul(predictions, self.features.t()) # dot product of the input features with all labeled MemoryBank features
+        correlation = torch.matmul(predictions, self.features.t()).to(self.device) # dot product of the input features with all labeled MemoryBank features
         # dot product equals the cosine similarity if feature vectors are normalized (unit length)
         
-        set_zero = torch.zeros(correlation.shape[1])
+        set_zero = torch.zeros(correlation.shape[1]).to(self.device) #
         for i in range( correlation.shape[0] ):
             correlation[i] = torch.where( correlation[i] > 0.9999, set_zero, correlation[i] )
  
