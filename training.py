@@ -52,20 +52,24 @@ class Trainer_nnclr(object):
     def __init__(self,p,criterion):
         self.criterion = criterion
         self.memory_bank = NNMemoryBankModule(size=8192).cuda()
+        self.device = p['device']
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        model.train()
+        model = model.to(self.device)
 
         for batch in train_loader:
             originImage_batch = batch['image']
             augmentedImage_batch_list = batch['image_augmented']
 
-            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
             z0, p0 = model(originImage_batch)
 
             loss = 0
             
             for augmentedImage_batch in augmentedImage_batch_list:
-                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
                 z1, p1 = model(augmentedImage_batch)
 
                 z0 = self.memory_bank(z0, update=False)
@@ -84,20 +88,24 @@ class Trainer_barlowtwins(object):
 
     def __init__(self,p,criterion):
         self.criterion = criterion
+        self.device = p['device']
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        model.train()
+        model = model.to(self.device)
 
         for batch in train_loader:
             originImage_batch = batch['image']
             augmentedImage_batch_list = batch['image_augmented']
 
-            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
             z0 = model(originImage_batch)
 
             loss = 0
             
             for augmentedImage_batch in augmentedImage_batch_list:
-                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
                 z1 = model(augmentedImage_batch)
                 loss += self.criterion(z0, z1)
 
@@ -112,21 +120,25 @@ class Trainer_simsiam(object):
 
     def __init__(self,p,criterion):
         self.criterion = criterion
+        self.device = p['device']
         
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        model.train()
+        model = model.to(self.device)
 
         for batch in train_loader:
             originImage_batch = batch['image']
             augmentedImage_batch_list = batch['image_augmented']
 
-            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
             z0, p0 = model(originImage_batch)
 
             loss = 0
             
             for augmentedImage_batch in augmentedImage_batch_list:
-                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
                 z1, p1 = model(augmentedImage_batch)
 
                 loss += 0.5 * (self.criterion(z0, p1) + self.criterion(z1, p0))
@@ -146,20 +158,24 @@ class Trainer_simclr(object):
 
     def __init__(self,p,criterion):
         self.criterion = criterion
+        self.device = p['device']
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        model.train()
+        model = model.to(self.device)
 
         for batch in train_loader:
             originImage_batch = batch['image']
             augmentedImage_batch_list = batch['image_augmented']
 
-            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
             z0 = model(originImage_batch)
 
             loss = 0
             
             for augmentedImage_batch in augmentedImage_batch_list:
-                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
                 z1 = model(augmentedImage_batch)
                 loss += self.criterion(z0, z1)
 
@@ -173,8 +189,12 @@ class Trainer_byol(object):
 
     def __init__(self,p,criterion):
         self.criterion = criterion
+        self.device = p['device']
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        model.train()
+        model = model.to(self.device)
 
         for batch in train_loader:
             update_momentum(model.backbone, model.backbone_momentum, m=0.99)
@@ -182,14 +202,14 @@ class Trainer_byol(object):
             originImage_batch = batch['image']
             augmentedImage_batch_list = batch['image_augmented']
 
-            originImage_batch = originImage_batch.cuda(non_blocking=True)
+            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
             p0 = model(originImage_batch)
             z0 = model.forward_momentum(originImage_batch)
 
             loss = 0
             
             for augmentedImage_batch in augmentedImage_batch_list:
-                augmentedImage_batch = augmentedImage_batch.cuda(non_blocking=True)
+                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
                 p1 = model(augmentedImage_batch)
                 z1 = model.forward_momentum(augmentedImage_batch)
                 loss += 0.5 * (self.criterion(p0, z1) + self.criterion(p1, z0))
