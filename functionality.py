@@ -459,7 +459,7 @@ def evaluate_knn(p,val_dataloader,model,device='cuda:0'):
             if isinstance(model,clpcl_model):
                 features.append(model.group(imgs))
             else:
-               features.append(model(imgs))
+                features.append(model(imgs))
 
             targets.append(labels)
 
