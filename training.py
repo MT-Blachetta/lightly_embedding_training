@@ -53,11 +53,14 @@ class Trainer_nnclr(object):
         self.criterion = criterion
         self.memory_bank = NNMemoryBankModule(size=8192).cuda()
         self.device = p['device']
+        self.best_loss = 100000
+        self.best_model = None
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
 
         model.train()
         model = model.to(self.device)
+        losses = AverageMeter('Loss', ':.4e')
 
         for batch in train_loader:
             originImage_batch = batch['image']
@@ -77,10 +80,16 @@ class Trainer_nnclr(object):
 
                 loss += 0.5 * (self.criterion(z0, p1) + self.criterion(z1, p0))
 
+            losses.update(loss.item())
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+        print('loss: ',str(losses.avg))
+        if losses.avg < self.best_loss:
+            self.best_loss = losses.avg
+            self.best_model = copy.deepcopy(model)
 
 
 #------------------------------------------------------------------
@@ -90,11 +99,14 @@ class Trainer_barlowtwins(object):
     def __init__(self,p,criterion):
         self.criterion = criterion
         self.device = p['device']
+        self.best_loss = 10000
+        self.best_model = None
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
 
         model.train()
         model = model.to(self.device)
+        losses = AverageMeter('Loss', ':.4e')
 
         for batch in train_loader:
             originImage_batch = batch['image']
@@ -110,10 +122,16 @@ class Trainer_barlowtwins(object):
                 z1 = model(augmentedImage_batch)
                 loss += self.criterion(z0, z1)
 
+            losses.update(loss.item())
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+        print('loss: ',str(losses.avg))
+        if losses.avg < self.best_loss:
+            self.best_loss = losses.avg
+            self.best_model = copy.deepcopy(model)
 
 
 
@@ -122,12 +140,15 @@ class Trainer_simsiam(object):
     def __init__(self,p,criterion):
         self.criterion = criterion
         self.device = p['device']
+        self.best_loss = 100000
+        self.best_model = None
         
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
 
         model.train()
         model = model.to(self.device)
+        losses = AverageMeter('Loss', ':.4e')
 
         for batch in train_loader:
             originImage_batch = batch['image']
@@ -144,10 +165,17 @@ class Trainer_simsiam(object):
 
                 loss += 0.5 * (self.criterion(z0, p1) + self.criterion(z1, p0))
 
+            losses.update(loss.item())
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+
+        print('loss: ',str(losses.avg))
+        if losses.avg < self.best_loss:
+            self.best_loss = losses.avg
+            self.best_model = copy.deepcopy(model)
 
 
 
@@ -160,11 +188,14 @@ class Trainer_simclr(object):
     def __init__(self,p,criterion):
         self.criterion = criterion
         self.device = p['device']
+        self.best_loss = 10000
+        self.best_model = None
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
 
         model.train()
         model = model.to(self.device)
+        losses = AverageMeter('Loss', ':.4e')
 
         for batch in train_loader:
             originImage_batch = batch['image']
@@ -180,10 +211,17 @@ class Trainer_simclr(object):
                 z1 = model(augmentedImage_batch)
                 loss += self.criterion(z0, z1)
 
+            losses.update(loss.item())
+
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+        print('loss: ',str(losses.avg))
+        if losses.avg < self.best_loss:
+            self.best_loss = losses.avg
+            self.best_model = copy.deepcopy(model)
 
 
 class Trainer_byol(object):
@@ -191,11 +229,14 @@ class Trainer_byol(object):
     def __init__(self,p,criterion):
         self.criterion = criterion
         self.device = p['device']
+        self.best_loss = 10000
+        self.best_model = None
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch):
 
         model.train()
         model = model.to(self.device)
+        losses = AverageMeter('Loss', ':.4e')
 
         for batch in train_loader:
             update_momentum(model.backbone, model.backbone_momentum, m=0.99)
@@ -216,10 +257,16 @@ class Trainer_byol(object):
                 loss += 0.5 * (self.criterion(p0, z1) + self.criterion(p1, z0))
 
 
+            losses.update(loss.item())
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+
+        print('loss: ',str(losses.avg))
+        if losses.avg < self.best_loss:
+            self.best_loss = losses.avg
+            self.best_model = copy.deepcopy(model)
 
 
 
@@ -351,10 +398,6 @@ class Trainer_clPcl(object):
             
             loss = instance_loss + group_loss
             
-            print('loss: ',str(loss))
-            if loss < self.best_loss:
-                self.best_loss = loss
-                self.best_model = copy.deepcopy(model)
             
             losses.update(loss.item())
 
@@ -364,6 +407,11 @@ class Trainer_clPcl(object):
 
             if i % 25 == 0:
                 progress.display(i)
+
+        print('loss: ',str(losses.avg))
+        if losses.avg < self.best_loss:
+            self.best_loss = losses.avg
+            self.best_model = copy.deepcopy(model)
 
 
 class Trainer_proto(object):
