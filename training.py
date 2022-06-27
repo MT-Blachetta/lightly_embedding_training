@@ -84,7 +84,7 @@ class Trainer_nnclr(object):
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+            #print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
 
         print('loss: ',str(losses.avg))
         if losses.avg < self.best_loss:
@@ -126,7 +126,7 @@ class Trainer_barlowtwins(object):
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+            #print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
 
         print('loss: ',str(losses.avg))
         if losses.avg < self.best_loss:
@@ -169,7 +169,7 @@ class Trainer_simsiam(object):
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+            #print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
 
 
         print('loss: ',str(losses.avg))
@@ -216,7 +216,7 @@ class Trainer_simclr(object):
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+            #print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
 
         print('loss: ',str(losses.avg))
         if losses.avg < self.best_loss:
@@ -261,7 +261,7 @@ class Trainer_byol(object):
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-            print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
+            #print(f"epoch: {epoch:>02}, loss: {loss:.5f}")
 
         print('loss: ',str(losses.avg))
         if losses.avg < self.best_loss:
