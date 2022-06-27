@@ -1,11 +1,12 @@
 import argparse
 import torch
 from termcolor import colored
+import pandas as pd
 import copy
 from config import create_config
 from cluster import cluster_module
 import torchvision.transforms as transforms
-from functionality import get_trainer, get_model, get_backbone, get_optimizer, get_dataset, get_val_dataset ,get_dataloader, get_criterion, get_transform, adjust_learning_rate, collate_custom, validation_loader, evaluate_knn
+from functionality import get_trainer, get_model, get_backbone, get_optimizer, get_dataset, get_val_dataset ,get_dataloader, get_criterion, get_transform, adjust_learning_rate, collate_custom, validation_loader, evaluate_all
 
 FLAGS = argparse.ArgumentParser(description='loss training')
 FLAGS.add_argument('-gpu',help='number as gpu identifier',default=0)
@@ -21,6 +22,8 @@ args = FLAGS.parse_args()
 with open(args.list,'r') as lf:
     pstr = lf.read()
     session_list = eval(pstr.strip(' \n'))
+
+session_performance = pd.DataFrame()
 
 for prefix in session_list:
     print('§1_prefix: ',prefix) #@
@@ -59,6 +62,8 @@ for prefix in session_list:
     start_epoch = 0
 
     version = p['version']
+
+    
     
 
     if version in ['proto_loss','cluster_modul']:
@@ -127,10 +132,16 @@ for prefix in session_list:
             # /TO DO: save training configuration to checkpoint
 
         #print('### EVAL KNN ###')
-    with open('results.txt','a') as f:
-        knn_result = evaluate_knn(p,val_loader,model,p['device'])
-        f.writelines(prefix+': '+str(knn_result))
+    results = evaluate_all(p,val_loader,model,p['device'])
+    session_row = pd.DataFrame({"weighted_kNN": results['weighted_kNN'],"k_means_accuracy":results['ACC'],"AMI":results['AMI'],"ARI":results['ARI']},index=[prefix])
+    session_performance = pd.concat([session_performance,session_row])
+
+    with open('results.txt','a') as f:       
+        f.writelines('wKNN.'+prefix+': '+str(results['weighted_kNN']))
+        f.writelines('ACC.'+prefix+': '+str(results['ACC']) )
         
 
     torch.save(trainer.best_model.state_dict(),p['result_save_path'])
     print("-----------TRAINING_PROCESS_FINISHED--------------")
+
+session_performance.to_csv('EVALUATION/last_results.csv')

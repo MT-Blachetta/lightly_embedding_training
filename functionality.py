@@ -8,6 +8,7 @@ import collections
 from torch._six import string_classes
 import torchvision.transforms as transforms
 from models import clpcl_model
+from eval_utils import kmeans_eval
 int_classes = int
 
 
@@ -441,7 +442,7 @@ class AverageMeter(object):
         return fmtstr.format(**self.__dict__)
 
 
-def evaluate_knn(p,val_dataloader,model,device='cuda:0'):
+def evaluate_all(p,val_dataloader,model,device='cuda:0'):
 
     model.eval()
     i = 0
@@ -465,6 +466,9 @@ def evaluate_knn(p,val_dataloader,model,device='cuda:0'):
 
         #features_tensor = torch.cat(features)
         targets_tensor = torch.cat(targets)
+        feature_tensor = torch.cat(features)
+
+        results_dict = kmeans_eval(feature_tensor.detach().cpu().numpy(),targets_tensor.detach().cpu().numpy(),p['num_classes'],128)
       
         
     dsize = len(targets_tensor) #[returns the first dimension size of targets]
@@ -485,7 +489,9 @@ def evaluate_knn(p,val_dataloader,model,device='cuda:0'):
 
     print('weighted_Knn: %.2f' %(topmeter.avg))
 
-    return topmeter.avg
+    results_dict['weighted_kNN'] = topmeter.avg
+
+    return results_dict
 
 
         #p['temperature']
