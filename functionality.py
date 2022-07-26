@@ -31,6 +31,11 @@ def get_backbone(p):
         backbone = nn.Sequential(*list(resnet.children())[:-1])
         out_dim = 512
 
+    elif p['backbone'] in ["ResNet18","ResNet34","ResNet50"]:
+        from resnet import get_resnet
+        backbone = get_resnet(p['backbone'])
+        out_dim = backbone.rep_dim
+
     else: raise ValueError("invalid backbone ID")
 
     return {'backbone':backbone, 'out_dim':out_dim}
@@ -68,6 +73,12 @@ def get_model(p,backbone,backbone_dim):
     elif p['base_model'] == 'clpcl':
         from models import clpcl_model
         return clpcl_model(backbone, backbone_dim, p['model_kwargs']['out_dim'])
+
+    elif p['base_model'] == 'moco':
+        from models import moco_model
+        return moco_model(backbone, backbone_dim, p['model_kwargs']['out_dim'])
+
+    else: raise ValueError('invalid base_model')
 
 def get_transform(p):
 
@@ -293,6 +304,10 @@ def get_trainer(p,criterion):
     elif p['train_method'] == 'byol':
         from training import Trainer_byol
         return Trainer_byol(p,criterion)
+
+    elif p['train_method'] == 'moco':
+        from training import Trainer_moco
+        return Trainer_moco(p)
 
     else: raise ValueError('trainer not implemented')
 

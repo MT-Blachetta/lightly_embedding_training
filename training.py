@@ -269,7 +269,53 @@ class Trainer_byol(object):
             self.best_model = copy.deepcopy(model)
 
 
+class Trainer_moco(object):
+    def __init__(self,p):
+        self.device = p['device']
+        self.best_loss = 10000
+        self.best_model = None
 
+
+    def train_one_epoch(self, train_loader, model, optimizer, epoch):
+
+        losses = AverageMeter('Loss', ':.4e')
+        progress = ProgressMeter(len(train_loader),[losses],prefix="Epoch: [{}]".format(epoch))
+        #alpha = self.alpha
+        iloss = torch.nn.CrossEntropyLoss()
+        iloss = iloss.to(self.device)
+        model = model.to(self.device)
+        model.train()
+        
+
+        for i, batch in enumerate(train_loader):
+            originImage_batch = batch['image']
+            augmentedImage_batch_list = batch['image_augmented']
+            #indices_batch = batch['index']
+            originImage_batch = originImage_batch.to(self.device,non_blocking=True)
+            #group_loss = 0
+            loss = 0
+            
+            for augmentedImage_batch in augmentedImage_batch_list:
+                
+                augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
+
+                logits, labels = model(originImage_batch,augmentedImage_batch)
+                loss += iloss(logits,labels)
+
+            losses.update(loss.item())
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if i % 25 == 0:
+                progress.display(i)
+
+
+        print('loss: ',str(losses.avg))
+        if losses.avg < self.best_loss:
+            self.best_loss = losses.avg
+            self.best_model = copy.deepcopy(model)
 
 
 #----------------------------------------------------------------
