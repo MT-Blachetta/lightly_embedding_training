@@ -3,13 +3,12 @@ setup: moco
 train_method: moco
 version: moco
 
-
 # Model
 backbone: ResNet34
 base_model: moco
 feature_dim: 128
 model_kwargs:
-    input_size: [96, 96, 3] 
+    input_size: [96, 96, 3]
     res_blocks: 30
     hidden_dim: 256
     out_dim: 128
@@ -41,12 +40,9 @@ batch_size: 512
 num_workers: 8
 
 # Transformations
-augmentation_strategy: multicrop 
+augmentation_strategy: moco
 augmentation_kwargs:
-   local_crops_number: 4
-   local_crops_scale: [0.05, 0.4]
-   local_crops_size: 96
-   global_crops_scale: [0.4, 1.0]
+   local_crops_number: 0
    random_resized_crop:
       size: 96
       scale: [0.2, 1.0]
@@ -61,7 +57,6 @@ augmentation_kwargs:
       p: 0.2
    random_horizontal_flip: 0.5
    gaussian_blur: [0.1,2.0]
-   Solarization: 0.2
    normalize:
       mean: [0.485, 0.456, 0.406]
       std: [0.229, 0.224, 0.225]

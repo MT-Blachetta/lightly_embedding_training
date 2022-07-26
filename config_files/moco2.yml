@@ -9,7 +9,7 @@ backbone: ResNet34
 base_model: moco
 feature_dim: 128
 model_kwargs:
-    input_size: [96, 96, 3] 
+    input_size: [96, 96, 3]
     res_blocks: 30
     hidden_dim: 256
     out_dim: 128
@@ -27,7 +27,7 @@ criterion_kwargs:
    temperature: 0.1 
 
 # Hyperparameters
-epochs: 500
+epochs: 1000
 optimizer: sgd
 optimizer_kwargs:
    nesterov: False
