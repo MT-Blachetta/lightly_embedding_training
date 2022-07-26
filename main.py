@@ -30,6 +30,7 @@ for prefix in session_list:
     #ok#
     p = create_config(args.root_dir, "config_files/"+prefix+'.yml', prefix)
     p['device'] = 'cuda:'+str(args.gpu)
+    device = p['device']
     #print(p) #@
     #ok#
     transform = get_transform(p)
@@ -98,15 +99,15 @@ for prefix in session_list:
             model.eval()
             i = 0
             with torch.no_grad():
-                model = model.cuda()
+                model = model.to(device)
                 for batch in cluster_loader:
                     origin_batch = batch['image']
                     #print('origin_batch: ',origin_batch.shape)
                     bsize = len(origin_batch)
                     augmented_batch = batch['image_augmented'][0]
                     #print('augmented_batch: ',augmented_batch.shape)
-                    origin_batch = origin_batch.cuda()
-                    augmented_batch = augmented_batch.cuda()
+                    origin_batch = origin_batch.to(device)
+                    augmented_batch = augmented_batch.to(device)
                     first = model.group(origin_batch)
                     #print('first: ',first.shape)
                     second = model.group(augmented_batch)

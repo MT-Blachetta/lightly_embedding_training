@@ -51,7 +51,7 @@ class Trainer_nnclr(object):
 
     def __init__(self,p,criterion):
         self.criterion = criterion
-        self.memory_bank = NNMemoryBankModule(size=8192).cuda()
+        self.memory_bank = NNMemoryBankModule(size=8192).to(p['device'])
         self.device = p['device']
         self.best_loss = 100000
         self.best_model = None
@@ -326,18 +326,20 @@ class Trainer_clPcl(object):
         self.num_clusters = p['num_classes']
         self.alpha = p['loss_alpha']
         self.lamb = p['loss_lambda']
-        self.criterion = criterion.cuda()
+        self.criterion = criterion.to(p['device'])
+        self.device = p['device']
         self.best_loss = 10000
         self.best_model = None
 
     def train_one_epoch(self, train_loader, model, optimizer, epoch, cluster_module=None):
         
+        device = self.device
         losses = AverageMeter('Loss', ':.4e')
         progress = ProgressMeter(len(train_loader),[losses],prefix="Epoch: [{}]".format(epoch))
         alpha = self.alpha
         iloss = torch.nn.CrossEntropyLoss()
-        iloss = iloss.cuda()
-        model = model.cuda()
+        iloss = iloss.to(device)
+        model = model.to(device)
         model.train()
         
 
@@ -400,10 +402,10 @@ class Trainer_clPcl(object):
                 for _ in range(1,k): fmatrix = torch.cat((fmatrix,original_cpu),1)
                 for _ in range(1,k): fmatrix_I = torch.cat((fmatrix_I,augmented_cpu),1)
                         
-                cmatrix = cmatrix.cuda()
-                fmatrix = fmatrix.cuda()
-                cmatrix_I = cmatrix_I.cuda()
-                fmatrix_I = fmatrix_I.cuda()
+                cmatrix = cmatrix.to(device)
+                fmatrix = fmatrix.to(device)
+                cmatrix_I = cmatrix_I.to(device)
+                fmatrix_I = fmatrix_I.to(device)
                     
                 zmatrix = fmatrix-cmatrix
                 zmatrix = zmatrix*zmatrix
@@ -424,8 +426,8 @@ class Trainer_clPcl(object):
                     assign[i][ int(labels_[i]) ] = 1
                     assign_I[i][ int(labels_I[i]) ] = 1
                         
-                assign = assign.cuda()
-                assign_I = assign_I.cuda()
+                assign = assign.to(device)
+                assign_I = assign_I.to(device)
                     
                 avgDistance = torch.sum(assign*result,0)
                 Z = torch.sum(assign,0) + 1
@@ -466,7 +468,8 @@ class Trainer_proto(object):
         self.num_clusters = p['num_classes']
         self.alpha = p['loss_alpha']
         self.lamb = p['loss_lambda']
-        self.criterion = criterion.cuda()
+        self.device = p['device']
+        self.criterion = criterion.to(p['device'])
         self.best_loss = 10000
         self.best_model = None
         self.nxt_criterion = SimCLRLoss(p['temperature'])
@@ -498,12 +501,13 @@ class Trainer_proto(object):
 
     def train_phase_A(self, train_loader, model, optimizer, epoch, cluster_module=None):
 
+        device = self.device
         losses = AverageMeter('Loss', ':.4e')
         progress = ProgressMeter(len(train_loader),[losses],prefix="Epoch: [{}]".format(epoch))
         #alpha = self.alpha
         iloss = torch.nn.CrossEntropyLoss()
-        iloss = iloss.cuda()
-        model = model.cuda()
+        iloss = iloss.to(device)
+        model = model.to(device)
         model.train()
         
 
@@ -534,12 +538,13 @@ class Trainer_proto(object):
 
     def train_phase_B(self, train_loader, model, optimizer, epoch, cluster_module=None):
         
+        device = self.device
         losses = AverageMeter('Loss', ':.4e')
         progress = ProgressMeter(len(train_loader),[losses],prefix="Epoch: [{}]".format(epoch))
         alpha = self.alpha
         iloss = torch.nn.CrossEntropyLoss()
-        iloss = iloss.cuda()
-        model = model.cuda()
+        iloss = iloss.to(device)
+        model = model.to(device)
         model.train()
         
 
@@ -602,10 +607,10 @@ class Trainer_proto(object):
                 for _ in range(1,k): fmatrix = torch.cat((fmatrix,original_cpu),1)
                 for _ in range(1,k): fmatrix_I = torch.cat((fmatrix_I,augmented_cpu),1)
                         
-                cmatrix = cmatrix.cuda()
-                fmatrix = fmatrix.cuda()
-                cmatrix_I = cmatrix_I.cuda()
-                fmatrix_I = fmatrix_I.cuda()
+                cmatrix = cmatrix.to(device)
+                fmatrix = fmatrix.to(device)
+                cmatrix_I = cmatrix_I.to(device)
+                fmatrix_I = fmatrix_I.to(device)
                     
                 zmatrix = fmatrix-cmatrix
                 zmatrix = zmatrix*zmatrix
@@ -626,8 +631,8 @@ class Trainer_proto(object):
                     assign[i][ int(labels_[i]) ] = 1
                     assign_I[i][ int(labels_I[i]) ] = 1
                         
-                assign = assign.cuda()
-                assign_I = assign_I.cuda()
+                assign = assign.to(device)
+                assign_I = assign_I.to(device)
                     
                 avgDistance = torch.sum(assign*result,0)
                 Z = torch.sum(assign,0) + 1
@@ -664,12 +669,13 @@ class Trainer_proto(object):
 
     def train_phase_C(self, train_loader, model, optimizer, epoch, cluster_module):
 
+        device = self.device
         losses = AverageMeter('Loss', ':.4e')
         progress = ProgressMeter(len(train_loader),[losses],prefix="Epoch: [{}]".format(epoch))
         alpha = self.alpha
         iloss = torch.nn.CrossEntropyLoss()
-        iloss = iloss.cuda()
-        model = model.cuda()
+        iloss = iloss.to(device)
+        model = model.to(device)
         model.train()
         
 
@@ -707,8 +713,8 @@ class Trainer_proto(object):
 
                 labels_, cluster_centers = cluster_module.cluster_batch(original_view)
                 labels_I, cluster_centers_I = cluster_module.cluster_batch(augmented_view,augmented=True)
-                #cluster_centers = torch.stack(cluster_centers,dim=0).cuda()
-                #cluster_centers_I = torch.stack(cluster_centers_I,dim=0).cuda()
+                #cluster_centers = torch.stack(cluster_centers,dim=0).to(device)
+                #cluster_centers_I = torch.stack(cluster_centers_I,dim=0).to(device)
 
                 mask_per_label = cluster_module.cluster_mask()
                 prototype_list = []
@@ -733,7 +739,7 @@ class Trainer_proto(object):
                 prototypes_I = torch.nn.functional.normalize(prototypes_I)
 
                 prototype_eval = torch.stack([prototypes,prototypes_I],dim=1)
-                prototype_eval = prototype_eval.cuda()
+                prototype_eval = prototype_eval.to(device)
 
                 proto_loss = self.nxt_criterion(prototype_eval)
 
@@ -765,10 +771,10 @@ class Trainer_proto(object):
                 for _ in range(1,k): fmatrix = torch.cat((fmatrix,original_cpu),1)
                 for _ in range(1,k): fmatrix_I = torch.cat((fmatrix_I,augmented_cpu),1)
                         
-                cmatrix = cmatrix.cuda()
-                fmatrix = fmatrix.cuda()
-                cmatrix_I = cmatrix_I.cuda()
-                fmatrix_I = fmatrix_I.cuda()
+                cmatrix = cmatrix.to(device)
+                fmatrix = fmatrix.to(device)
+                cmatrix_I = cmatrix_I.to(device)
+                fmatrix_I = fmatrix_I.to(device)
                     
                 zmatrix = fmatrix-cmatrix
                 zmatrix = zmatrix*zmatrix
@@ -789,8 +795,8 @@ class Trainer_proto(object):
                     assign[i][ int(labels_[i]) ] = 1
                     assign_I[i][ int(labels_I[i]) ] = 1
                         
-                assign = assign.cuda()
-                assign_I = assign_I.cuda()
+                assign = assign.to(device)
+                assign_I = assign_I.to(device)
                     
                 avgDistance = torch.sum(assign*result,0)
                 Z = torch.sum(assign,0) + 1

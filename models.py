@@ -253,7 +253,7 @@ class clpcl_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encode
         logits /= self.T
 
         # labels: positive key indicators
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
+        labels = torch.zeros(logits.shape[0], dtype=torch.long)
 
         # dequeue and enqueue
         self._dequeue_and_enqueue(k)
@@ -392,7 +392,7 @@ class moco_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encoder
         logits /= self.T
 
         # labels: positive key indicators
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
+        labels = torch.zeros(logits.shape[0], dtype=torch.long)
 
         # dequeue and enqueue
         self._dequeue_and_enqueue(k)
