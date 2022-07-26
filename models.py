@@ -134,7 +134,7 @@ class clpcl_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encode
     Build a MoCo model with: a query encoder, a key encoder, and a queue
     https://arxiv.org/abs/1911.05722
     """
-    def __init__(self, backbone ,backbone_dim ,dim=128, K=65536, m=0.999, T=0.07, mlp=False,hidden_dim=512):
+    def __init__(self, device, backbone ,backbone_dim ,dim=128, K=65536, m=0.999, T=0.07, mlp=False,hidden_dim=512):
         """
         dim: feature dimension (default: 128)
         K: queue size; number of negative keys (default: 65536)
@@ -143,6 +143,7 @@ class clpcl_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encode
         """
         super(clpcl_model, self).__init__()
 
+        self.device = device
         self.K = K
         self.m = m
         self.T = T
@@ -255,6 +256,9 @@ class clpcl_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encode
         # labels: positive key indicators
         labels = torch.zeros(logits.shape[0], dtype=torch.long)
 
+        logits = logits.to(self.device)
+        labels = labels.to(self.device)
+
         # dequeue and enqueue
         self._dequeue_and_enqueue(k)
 
@@ -277,7 +281,7 @@ class moco_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encoder
     Build a MoCo model with: a query encoder, a key encoder, and a queue
     https://arxiv.org/abs/1911.05722
     """
-    def __init__(self, backbone ,backbone_dim ,dim=128, K=65536, m=0.999, T=0.07, mlp=False, hidden_dim=512):
+    def __init__(self, device, backbone ,backbone_dim ,dim=128, K=65536, m=0.999, T=0.07, mlp=False, hidden_dim=512):
         """
         dim: feature dimension (default: 128)
         K: queue size; number of negative keys (default: 65536)
@@ -286,6 +290,7 @@ class moco_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encoder
         """
         super(moco_model, self).__init__()
 
+        self.device = device
         self.K = K
         self.m = m
         self.T = T
@@ -393,6 +398,9 @@ class moco_model(nn.Module): # Conditions: [+] key_encoder is copy(query_encoder
 
         # labels: positive key indicators
         labels = torch.zeros(logits.shape[0], dtype=torch.long)
+
+        logits = logits.to(self.device)
+        labels = labels.to(self.device)
 
         # dequeue and enqueue
         self._dequeue_and_enqueue(k)

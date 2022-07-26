@@ -76,7 +76,7 @@ def get_model(p,backbone,backbone_dim):
 
     elif p['base_model'] == 'moco':
         from models import moco_model
-        return moco_model(backbone, backbone_dim, p['model_kwargs']['out_dim'])
+        return moco_model(p['device'],backbone, backbone_dim, p['model_kwargs']['out_dim'])
 
     else: raise ValueError('invalid base_model')
 
