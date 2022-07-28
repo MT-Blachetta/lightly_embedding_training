@@ -299,7 +299,7 @@ class Trainer_moco(object):
                 
                 augmentedImage_batch = augmentedImage_batch.to(self.device,non_blocking=True)
 
-                logits, labels = model(originImage_batch,augmentedImage_batch)
+                logits, labels = model(self.device,originImage_batch,augmentedImage_batch)
                 loss += iloss(logits,labels)
 
             losses.update(loss.item())
