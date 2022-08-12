@@ -19,6 +19,7 @@ class wrapped_resnet(nn.Module):
     def forward(self,x):
         return self.backbone(x).flatten(start_dim=1)
 
+#@author: Michael Blachetta
 def get_backbone(p):
 
     if p['backbone'] == 'scatnet':
@@ -40,6 +41,7 @@ def get_backbone(p):
 
     return {'backbone':backbone, 'out_dim':out_dim}
 
+#@author: Michael Blachetta
 def get_model(p,backbone,backbone_dim):
     
     if p['base_model'] == 'scatnet':
@@ -248,7 +250,7 @@ def get_optimizer(p,model):
 
     return optimizer
 
-
+#@author: Michael Blachetta
 def get_criterion(p):
     #p['criterion_kwargs']['temperature']
     if p['criterion'] == 'clpcl':
@@ -275,6 +277,7 @@ def get_criterion(p):
     else: 
         raise ValueError('not ready yet')
 
+#@author: Michael Blachetta
 def get_trainer(p,criterion):
 
     if p['train_method'] == 'clpcl':
@@ -457,6 +460,7 @@ class AverageMeter(object):
         return fmtstr.format(**self.__dict__)
 
 
+#@author: Michael Blachetta
 def evaluate_all(p,val_dataloader,model,device='cuda:0'):
 
     model.eval()
@@ -509,7 +513,7 @@ def evaluate_all(p,val_dataloader,model,device='cuda:0'):
     return results_dict
 
 
-        #p['temperature']
+    
 
     
 

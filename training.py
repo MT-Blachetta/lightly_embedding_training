@@ -47,6 +47,7 @@ class ProgressMeter(object):
         return '[' + fmt + '/' + fmt.format(num_batches) + ']'
 
 
+#@author: Michael Blachetta
 class Trainer_nnclr(object):
 
     def __init__(self,p,criterion):
@@ -94,6 +95,7 @@ class Trainer_nnclr(object):
 
 #------------------------------------------------------------------
 
+#@author: Michael Blachetta
 class Trainer_barlowtwins(object):
 
     def __init__(self,p,criterion):
@@ -134,7 +136,7 @@ class Trainer_barlowtwins(object):
             self.best_model = copy.deepcopy(model)
 
 
-
+#@author: Michael Blachetta
 class Trainer_simsiam(object):
 
     def __init__(self,p,criterion):
@@ -183,6 +185,7 @@ class Trainer_simsiam(object):
 #----------------------------------------------------------------
 
 
+#@author: Michael Blachetta
 class Trainer_simclr(object):
 
     def __init__(self,p,criterion):
@@ -224,6 +227,7 @@ class Trainer_simclr(object):
             self.best_model = copy.deepcopy(model)
 
 
+#@author: Michael Blachetta
 class Trainer_byol(object):
 
     def __init__(self,p,criterion):
@@ -269,6 +273,7 @@ class Trainer_byol(object):
             self.best_model = copy.deepcopy(model)
 
 
+#@author: Michael Blachetta
 class Trainer_moco(object):
     def __init__(self,p):
         self.device = p['device']
@@ -320,6 +325,7 @@ class Trainer_moco(object):
 
 #----------------------------------------------------------------
 
+#@author: Michael Blachetta
 class Trainer_clPcl(object):
 
     def __init__(self,p,criterion):
@@ -462,6 +468,7 @@ class Trainer_clPcl(object):
             self.best_model = copy.deepcopy(model)
 
 
+#@author: Michael Blachetta
 class Trainer_proto(object):
 
     def __init__(self,p,criterion):

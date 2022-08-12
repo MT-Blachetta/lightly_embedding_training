@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-
+#@author: Michael Blachetta
 class PclCldLoss_2(nn.Module):
     
     def __init__(self):
