@@ -24,13 +24,13 @@ are defined by the parameters (as name and value pairs) of the config file. The 
 	 # Model
 	 
 	# each embedding learning method has another network architecture but all have a backbone network as component
-	backbone: ResNet34 # the following backbone networks are implemented: [ResNet18,ResNet34,ResNet50, scatnet ()]
+	backbone: ResNet34 # the following backbone networks are implemented: [ResNet18,ResNet34,ResNet50, scatnet (https://github.com/vkinakh/scatsimclr)]
 	
 	# the full model architecture depends on the learning method
-	base_model: moco # for each method, a corresponding base_model exists (contains the backbone): []
+	base_model: moco # for each method, a corresponding base_model exists (contains the backbone): [scatnet,barlow,simclr,byol,nnclr,simsiam,swav,clpcl,moco]
 	
-	feature_dim: 128
-	model_kwargs:
+	feature_dim: 128 # the dimension of the trained embeddings
+	model_kwargs: # this parameters are used for the scatnet network architecture
 		input_size: [96, 96, 3] 
 		res_blocks: 30
 		hidden_dim: 256
