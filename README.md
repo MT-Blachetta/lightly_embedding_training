@@ -31,8 +31,8 @@ are defined by the parameters (as name and value pairs) of the config file. The 
 	
 	feature_dim: 128 # the dimension of the trained embeddings
 	model_kwargs: # this parameters are used for the scatnet network architecture
-		input_size: [96, 96, 3] 
-		res_blocks: 30
+		input_size: [96, 96, 3] # [widht,height,color channels] as dimensionality of the images
+		res_blocks: 30 # number of residual blocks for the adapter network
 		hidden_dim: 256
 		out_dim: 128
 
