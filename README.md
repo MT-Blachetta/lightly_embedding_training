@@ -33,8 +33,8 @@ are defined by the parameters (as name and value pairs) of the config file. The 
 	model_kwargs: # this parameters are used for the scatnet network architecture
 		input_size: [96, 96, 3] # [widht,height,color channels] as dimensionality of the images
 		res_blocks: 30 # number of residual blocks for the adapter network
-		hidden_dim: 256
-		out_dim: 128
+		hidden_dim: 256 # If the projection head component is an MLP, the number of neurons in the hidden Layer
+		out_dim: 128 # output dimension of the feature representation for training
 
 	 # Dataset
 	train_db_name: stl-10
