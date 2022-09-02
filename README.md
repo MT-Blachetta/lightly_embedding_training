@@ -37,35 +37,35 @@ are defined by the parameters (as name and value pairs) of the config file. The 
 		out_dim: 128 # output dimension of the feature representation for training
 
 	 # Dataset
-	train_db_name: stl-10
-	val_db_name: stl-10
-	num_classes: 10
-	split: train+unlabeled
+	train_db_name: stl-10 # semantic features are derived from one of the datasets [stl-10,cifar-10,cifar-20]
+	val_db_name: stl-10 # evaluation dataset for weighted KNN and k-means results on the learned embeddings
+	num_classes: 10 # number of classes of the dataset
+	split: train+unlabeled # subset of stl-10 for training
 
-	 # LossA
-	temperature: 0.1
-	criterion: clpcl
+	 # Loss
+	temperature: 0.1 # parameter for the contrastive loss function
+	criterion: clpcl # the loss function the model is trained with. It corresponds with the setup and train_method (parameter)
 	criterion_kwargs:
 	   temperature: 0.1 
 
-	 # Hyperparameters
-	epochs: 500
+	 # general Hyperparameters
+	epochs: 500 # number of training epochs
 	optimizer: sgd
 	optimizer_kwargs:
 	   nesterov: False
 	   weight_decay: 0.0001 
 	   momentum: 0.9
 	   lr: 0.4
-	scheduler: cosine
+	scheduler: cosine # a schedule that regulates the learning rate during the training phase (for each epoch) depending on the current epoch
 	scheduler_kwargs:
 	   lr_decay_rate: 0.1
 	batch_size: 512 
-	num_workers: 8
+	num_workers: 8 # technical parameter for the number of threads (cpu) loading the batch
 
 	 # Transformations
-	augmentation_strategy: multicrop 
-	augmentation_kwargs:
-	   local_crops_number: 4
+	augmentation_strategy: multicrop # this parameter selects the augmentation method for each sample the network is trained with
+	augmentation_kwargs: # the augmentation settings are different for each augmentation_strategy
+	   local_crops_number: 4 # multicrop augmentations creates two global views and multiple local views of local_crop_size
 	   local_crops_scale: [0.05, 0.4]
 	   local_crops_size: 96
 	   global_crops_scale: [0.4, 1.0]
@@ -88,7 +88,7 @@ are defined by the parameters (as name and value pairs) of the config file. The 
 		  mean: [0.485, 0.456, 0.406]
 		  std: [0.229, 0.224, 0.225]
 
-	transformation_kwargs:
+	transformation_kwargs: # this transformation parameters are only used for the evaluation dataset from wich the feature representation are computed
 	   crop_size: 96
 	   normalize:
 		  mean: [0.485, 0.456, 0.406]
